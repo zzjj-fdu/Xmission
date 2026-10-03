@@ -1,0 +1,16 @@
+# GNU ld 链接 tauri 级别的 cdylib 会触发 "export ordinal too large"（导出符号超 65535），
+# 改用 rust 自带的 rust-lld（MinGW 后端无此问题）。
+[target.x86_64-pc-windows-gnu]
+linker = "rust-lld"
+
+# GNU 工具链需要把 gcc/ar/dlltool/windres 所在目录加入 PATH。
+# 不强制指定 C 编译器，使 MSVC 和 GNU 按所选 Rust target 自动发现工具。
+
+[source.crates-io]
+replace-with = 'rsproxy-sparse'
+
+[source.rsproxy-sparse]
+registry = "sparse+https://rsproxy.cn/index/"
+
+[registries.rsproxy]
+index = "sparse+https://rsproxy.cn/index/"

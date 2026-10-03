@@ -1,0 +1,632 @@
+@import "tailwindcss";
+
+/* 缝合像素字体 Fusion Pixel 12px 等宽（简体中文），OFL 开源
+   来源：https://github.com/TakWolf/fusion-pixel-font/releases/tag/2026.08.11
+   许可证见 public/fonts/OFL.txt */
+@font-face {
+  font-family: "Fusion Pixel";
+  src: url("/fonts/fusion-pixel-12px-mono-zh_hans.woff2") format("woff2");
+  font-display: swap;
+  /* 像素字体关闭合成加粗/斜体，保持像素边缘锐利 */
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Ark Pixel CN";
+  src: url("/fonts/ark-pixel-12px-proportional-zh_cn.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Ark Pixel Latin";
+  src: url("/fonts/ark-pixel-12px-proportional-latin.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Island Round";
+  src: url("/fonts/ZCOOLKuaiLe-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Journal Serif";
+  src: url("/fonts/ZCOOLXiaoWei-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  font-family: "Fusion Pixel", "Zpix", "Cubic 11", monospace;
+  font-style: normal; /* 中文禁用斜体 */
+  /* 像素字体需要整数倍字号渲染最清晰：12px 基准 */
+  font-size: 12px;
+  -webkit-font-smoothing: none;
+}
+
+/* 统一盒模型，杜绝 padding/border 撑出横向滚动条 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* 皮肤化滚动条（WebView2/Chromium）：颜色由 src/themes/index.ts 写入 CSS 变量，
+   缺省值为 V2 像素 JRPG 配色（暗轨道 + 深金滑块，hover 亮金） */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--xm-scrollbar-track, #0d0f24);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--xm-scrollbar-thumb, #8a5a19);
+  border: 2px solid var(--xm-scrollbar-track, #0d0f24);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--xm-scrollbar-thumb-hover, #f5c542);
+}
+::-webkit-scrollbar-corner,
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* TipTap 任务备注编辑区（颜色走主题 CSS 变量） */
+.notes-editor-content {
+  min-height: 96px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  outline: none;
+  color: var(--xm-notes-text, #f4f1de);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.notes-editor-content p {
+  margin: 0 0 4px;
+}
+.notes-editor-content ul,
+.notes-editor-content ol {
+  margin: 0 0 4px;
+  padding-left: 22px;
+}
+.notes-editor-content strong {
+  color: var(--xm-notes-strong, #f5c542);
+}
+
+/* 悬浮窗里的只读备注详情：复用编辑区排版，但紧凑、限高可滚 */
+.notes-view {
+  min-height: 0;
+  max-height: 160px;
+  margin: 2px 4px 6px 28px;
+  padding: 6px 8px;
+  border: 1px solid var(--xm-notes-border, #8a5a19);
+  background: var(--xm-notes-bg, #0d0f24);
+}
+
+/* 像素风渲染工具类 */
+.pixelated {
+  image-rendering: pixelated;
+}
+
+/* 像素图标/SVG 锐利边缘 */
+.pixel-icon {
+  shape-rendering: crispEdges;
+  image-rendering: pixelated;
+}
+
+/* Desktop composition: scenery remains visible beside the functional journal. */
+.xm-window { display: flex; flex-direction: column; width: 100%; height: 100vh; overflow: hidden; }
+.xm-window-titlebar {
+  height: 38px; flex: 0 0 38px; display: flex; align-items: center; justify-content: space-between;
+  background: var(--xm-header-surface); color: var(--xm-header-text);
+  border-bottom: 2px solid var(--xm-main-edge); user-select: none;
+}
+.xm-window-title { display: inline-flex; align-items: center; gap: 8px; padding-left: 14px; pointer-events: none; letter-spacing: .1em; font-weight: 700; }
+.xm-window-title-sub { opacity: .65; font-size: 11px; font-weight: 400; }
+.xm-window-controls { display: flex; height: 100%; }
+.xm-window-controls button { width: 44px; height: 100%; border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 17px; line-height: 1; }
+.xm-window-controls button:hover { background: color-mix(in srgb, var(--xm-main-edge) 28%, transparent); }
+.xm-window-controls button:last-child:hover { background: #b63731; color: #fff; }
+.xm-shell {
+  position: relative;
+  isolation: isolate;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.xm-nav {
+  height: 100%;
+  z-index: 3;
+  box-shadow: 3px 0 18px rgba(0, 0, 0, .22) !important;
+}
+.xm-brand {
+  min-height: 58px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+}
+.xm-nav-item {
+  min-height: 42px;
+  transition: filter .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.xm-nav-item:hover { filter: brightness(1.15); transform: translateX(2px); }
+.task-list-panel { container-type: inline-size; }
+@container (max-width: 650px) { .xm-task-row-stars { display: none; } }
+@container (max-width: 480px) { .xm-task-row-form { display: none; } }
+.xm-task-quick-action{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:52px;min-height:34px;padding:3px 7px;border:1px solid var(--xm-accent);background:var(--xm-panel);color:var(--xm-accent);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.xm-task-quick-action:hover{filter:brightness(1.18)}
+.xm-task-quick-action.is-danger{border-color:var(--xm-danger,#b7473a);color:var(--xm-danger,#b7473a)}
+@container (max-width: 590px) { .xm-task-quick-action{min-width:31px;padding:3px 5px}.xm-task-quick-action span{display:none} }
+.xm-nav-item:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--xm-focus, #f5c542);
+  outline-offset: 2px;
+}
+.xm-main {
+  position: relative;
+  width: auto;
+  min-width: 0;
+  height: 100%;
+  z-index: 2;
+  background: var(--xm-main-surface);
+  border-left: 2px solid var(--xm-main-edge);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, .3);
+}
+.xm-main > div:not(.xm-page-kicker) { max-width: 850px; margin-inline: auto; }
+.xm-page-kicker {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin: -24px -24px 24px;
+  padding: 13px 24px;
+  background: var(--xm-header-surface);
+  border-bottom: 1px solid var(--xm-main-edge);
+  color: var(--xm-header-text);
+  font-size: 12px;
+  letter-spacing: .06em;
+}
+.xm-scene {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: none;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+.xm-scene-divider {
+  position: relative; z-index: 4; width: 8px; flex: 0 0 8px; height: 100%;
+  cursor: col-resize; background: var(--xm-main-edge);
+  box-shadow: -2px 0 9px rgba(0,0,0,.2), 2px 0 9px rgba(0,0,0,.2);
+}
+.xm-scene-divider:hover, .xm-scene-divider:focus-visible { background: var(--xm-focus); }
+.xm-focus-preview{position:absolute;right:0;top:0;bottom:0;z-index:5;pointer-events:none;display:grid;place-items:center;padding:18px;background:color-mix(in srgb,var(--xm-main-surface,#f4e7cd) 58%,transparent);backdrop-filter:blur(15px) saturate(1.25);-webkit-backdrop-filter:blur(15px) saturate(1.25);border-left:2px solid var(--xm-accent,#d8a144);box-shadow:-12px 0 42px #1117;animation:xm-focus-preview-in .2s ease-out both}
+.xm-focus-preview-card{width:min(100%,320px);padding:clamp(14px,2vw,26px);text-align:center;background:var(--xm-panel,#f8eed8);border:2px solid var(--xm-accent,#ad7836);box-shadow:0 9px 0 #0002,0 15px 35px #0004;color:var(--xm-accent,#855b28);display:grid;gap:10px}
+.xm-focus-preview-card span{font-size:10px;letter-spacing:.2em;opacity:.8}.xm-focus-preview-card strong{font-family:var(--xm-font-display,inherit);font-size:clamp(15px,1.6vw,23px);line-height:1.35}.xm-focus-preview-card small{font-size:12px;line-height:1.5;opacity:.8}
+.xm-focus-preview-pixel-jrpg .xm-focus-preview-card{background:#142149;border-color:#efc05c;color:#ffe5a0;box-shadow:0 0 0 4px #213e72,0 12px 28px #030b27b8}
+.xm-focus-preview-parchment-journal .xm-focus-preview-card{background:#eee0bf;border-color:#84613c;color:#62401f;border-radius:10px}
+.xm-focus-preview-animal-crossing .xm-focus-preview-card{background:#fffdf0;border-color:#77b760;color:#43803e;border-radius:22px}
+.xm-focus-preview-stardew-valley .xm-focus-preview-card{background:#f5d39b;border:5px ridge #92572e;color:#663919;box-shadow:0 8px 0 #5c351d,0 15px 28px #0005}
+@keyframes xm-focus-preview-in{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+.xm-scene-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 24px clamp(12px, 1.5vw, 24px);
+  color: #fff9e8;
+  text-shadow: 0 2px 8px rgba(0,0,0,.8), 0 1px 2px rgba(0,0,0,.8);
+  pointer-events: none;
+  overflow: hidden;
+}
+.xm-scene-caption span { font-size: 11px; letter-spacing: .2em; }
+.xm-scene-caption strong { font-size: clamp(16px, 1.5vw, 24px); max-width: 100%; line-height: 1.35; overflow-wrap: anywhere; }
+.xm-scene-caption i { font-size: 12px; font-style: normal; white-space: nowrap; }
+.xm-focus-mode{position:fixed;inset:0;z-index:100;background-size:cover;background-position:center;display:grid;place-items:center;color:#fff8e7;text-shadow:0 2px 8px #000a}
+.xm-focus-exit{position:absolute;z-index:2;right:24px;top:20px;border:1px solid #fff9;background:#1d2039a6;color:#fff;padding:10px 16px;cursor:pointer}
+.xm-focus-content{position:relative;z-index:1;text-align:center;padding:26px;max-width:min(90vw,640px);background:none;border:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+.xm-focus-content.is-setup{background:#10152591;border:1px solid #fff8;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+.xm-focus-content.is-running{background:transparent;border:0;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;max-width:none;padding:20px;text-shadow:0 3px 13px #000b,0 0 27px #0008}
+.xm-focus-content.is-running>span,.xm-focus-content.is-running h1{display:none}
+.xm-focus-content.is-running strong{font-size:clamp(74px,15vw,210px);font-weight:500;letter-spacing:.045em}
+.xm-focus-content.is-running .xm-focus-actions{opacity:.34;transition:opacity .2s ease}.xm-focus-mode:hover .xm-focus-content.is-running .xm-focus-actions,.xm-focus-content.is-running:focus-within .xm-focus-actions{opacity:1}
+.xm-focus-content>span{font-size:13px;letter-spacing:.26em}
+.xm-focus-content h1{font-size:clamp(22px,4vw,44px);font-weight:500;margin:24px 0}
+.xm-focus-content strong{display:block;font-size:clamp(56px,12vw,120px);font-variant-numeric:tabular-nums;line-height:1.1}
+.xm-focus-duration{display:inline-flex;align-items:center;gap:9px;margin-top:15px;font-size:13px}.xm-focus-duration input{width:64px;padding:6px 8px;border:1px solid #fff9;background:#111b32bc;color:#fff;font:inherit;text-align:center}.xm-focus-error{margin:15px 0 0;color:#ffdcba;font-size:12px}
+.xm-focus-actions{display:flex;gap:12px;justify-content:center;margin-top:25px;flex-wrap:wrap}
+.xm-focus-actions button{cursor:pointer;padding:12px 24px;border:1px solid #fff9;background:#ffffffeb;color:#283044;font:inherit;font-weight:700}
+.xm-focus-actions button:hover{background:#fff}
+.xm-weather-controls{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end}.xm-weather-controls>label{min-width:min(100%,205px)}
+.xm-weather-city{margin-top:14px;padding:14px;border:1px solid var(--xm-border,#b99865);background:color-mix(in srgb,var(--xm-panel,#fff9eb) 80%,transparent)}
+.xm-weather-city-search{display:flex;flex-wrap:wrap;gap:10px;align-items:end}.xm-weather-city-search>button{min-height:36px}
+.xm-weather-city-results{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.xm-weather-city-results button{padding:7px 11px;border:1px solid var(--xm-accent,#9a6119);background:var(--xm-panel,#fff9eb);color:var(--xm-text,#442d20);font:inherit;cursor:pointer}.xm-weather-city-results button:hover{background:var(--xm-accent,#9a6119);color:#fff}
+.xm-weather-status{margin:10px 0 0;color:var(--xm-text-muted,#796a57);font-size:12px;line-height:1.6;overflow-wrap:anywhere}.xm-weather-status.is-error{color:var(--xm-danger,#b44837)}.xm-weather-status button{margin-left:8px;padding:2px 6px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer}.xm-weather-status a{color:var(--xm-accent,#9a6119)}
+.xm-scene-gallery{margin-top:14px;color:var(--xm-text-muted,#796a57);font-size:12px}
+.xm-scene-gallery summary{cursor:pointer;padding:7px 0;color:var(--xm-accent,#9a6119)}
+.xm-scene-gallery>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:8px}
+.xm-scene-gallery figure{margin:0;min-width:0}.xm-scene-gallery img{display:block;width:100%;aspect-ratio:2.4;object-fit:cover;border-radius:4px}.xm-scene-gallery figcaption{padding:6px 0}
+
+:root[data-xm-theme="pixel-jrpg"] {
+  --xm-main-surface: #10152eea;
+  --xm-header-surface: #101a3b;
+  --xm-main-edge: #c58b2c;
+  --xm-header-text: #67d6e8;
+  --xm-focus: #f5c542;
+  --xm-course-surface: #192b52;
+  --xm-grid-surface: #101932;
+  --xm-grid-head: #1a2a4e;
+  --xm-grid-cell: #111b35;
+  --xm-grid-ghost: #0d1429;
+}
+:root[data-xm-theme="parchment-journal"] {
+  --xm-main-surface: #e9d8b5f2;
+  --xm-header-surface: #ddc49a;
+  --xm-main-edge: #785936;
+  --xm-header-text: #26375e;
+  --xm-focus: #9a6119;
+  --xm-course-surface: #f3dfb8;
+  --xm-grid-surface: #f7e9cc;
+  --xm-grid-head: #dfc69d;
+  --xm-grid-cell: #f6e8c8;
+  --xm-grid-ghost: #e8d8b7;
+}
+:root[data-xm-theme="animal-crossing"] {
+  --xm-main-surface: #fff9eaf2;
+  --xm-header-surface: #f4ebd4;
+  --xm-main-edge: #d7c39e;
+  --xm-header-text: #6a8b3c;
+  --xm-focus: #68b34a;
+  --xm-course-surface: #e9f5d8;
+  --xm-grid-surface: #fffdf3;
+  --xm-grid-head: #e4f0d6;
+  --xm-grid-cell: #fffdf2;
+  --xm-grid-ghost: #f1efdf;
+}
+:root[data-xm-theme="stardew-valley"] {
+  --xm-main-surface: linear-gradient(rgba(51,31,17,.91),rgba(51,31,17,.94)), #3a2415;
+  --xm-header-surface: #5b351b;
+  --xm-main-edge: #ac692b;
+  --xm-header-text: #f3d59c;
+  --xm-focus: #dda033;
+  --xm-course-surface: #f3d9a6;
+  --xm-grid-surface: #ead0a2;
+  --xm-grid-head: #b8793d;
+  --xm-grid-cell: #f4dfb4;
+  --xm-grid-ghost: #cfb58b;
+}
+.xm-schedule-head, .xm-calendar-weekday {
+  background-color: var(--xm-grid-head);
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,.12);
+}
+.xm-schedule-period { background-color: var(--xm-grid-head); }
+.xm-calendar-day { transition: filter .15s ease, box-shadow .15s ease; }
+.xm-schedule-grid, .xm-calendar-grid {
+  background: var(--xm-grid-surface);
+  border: 2px solid var(--xm-main-edge);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.15), 0 4px 12px rgba(0,0,0,.12);
+}
+.xm-course-block { box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 1px 2px 0 rgba(0,0,0,.12); }
+.xm-course-block:hover, .xm-calendar-day:hover { filter: brightness(1.07); }
+:root[data-xm-theme="parchment-journal"] .xm-schedule-grid,
+:root[data-xm-theme="parchment-journal"] .xm-calendar-grid {
+  background-image: radial-gradient(#b6936230 1px, transparent 1px);
+  background-size: 13px 13px;
+}
+:root[data-xm-theme="animal-crossing"] .xm-schedule-grid,
+:root[data-xm-theme="animal-crossing"] .xm-calendar-grid { border-radius: 18px; overflow: hidden; }
+:root[data-xm-theme="animal-crossing"] .xm-course-block { border-radius: 10px; }
+:root[data-xm-theme="stardew-valley"] .xm-schedule-grid,
+:root[data-xm-theme="stardew-valley"] .xm-calendar-grid {
+  background-image: url('./assets/themes/sv_parchment_tile_clean.png');
+  image-rendering: pixelated;
+  box-shadow: inset 0 0 0 4px #a66e31, inset 0 0 0 6px #5a351b, 0 5px 0 #3c2313;
+}
+:root[data-xm-theme="stardew-valley"] .xm-course-block { border-width: 2px !important; box-shadow: 2px 2px 0 #835126; }
+:root[data-xm-theme="animal-crossing"] .xm-main { border-radius: 26px 0 0 26px; }
+:root[data-xm-theme="animal-crossing"] .xm-nav-item { border-radius: 999px; }
+:root[data-xm-theme="parchment-journal"] .xm-main { box-shadow: -8px 0 0 #302b26aa, -18px 0 28px #1d1a17aa; }
+:root[data-xm-theme="stardew-valley"] .xm-main { border-left-width: 8px; box-shadow: inset 5px 0 0 #6e431f, -12px 0 28px #241509aa; }
+
+.xm-widget-frame { filter: drop-shadow(0 8px 18px rgba(0,0,0,.3)); }
+.xm-widget-titlebar { letter-spacing: .08em; text-shadow: 0 1px 2px rgba(0,0,0,.22); }
+.xm-widget-frame .quest-title { font-size: 14px !important; line-height: 1.35; }
+.xm-widget-list { container-type: inline-size; }
+.xm-widget-row {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: 28px minmax(112px, 1fr) auto auto auto;
+  grid-template-areas: "check title title title expand" "category form streak progress importance";
+  column-gap: 5px !important;
+  row-gap: 3px;
+  align-items: center;
+}
+.xm-widget-row .xm-widget-cursor { display: none !important; }
+.xm-widget-row .xm-widget-overdue { position: absolute; left: 1px; top: 5px; bottom: 5px; width: 2px !important; margin: 0 !important; }
+.xm-widget-row .xm-widget-check { grid-area: check; display: inline-flex; }
+.xm-widget-row .quest-title {
+  grid-area: title; min-width: 0 !important; white-space: normal !important;
+  overflow: visible !important; text-overflow: clip !important; overflow-wrap: anywhere;
+}
+.xm-widget-row .xm-widget-expand { grid-area: expand; }
+.xm-widget-row .xm-widget-category { grid-area: category; }
+.xm-widget-row .xm-widget-form { grid-area: form; display: inline-flex; justify-self: start; }
+.xm-widget-row .xm-widget-streak { grid-area: streak; }
+.xm-widget-row .xm-widget-progress { grid-area: progress; }
+.xm-widget-row .xm-widget-importance { grid-area: importance; display: inline-flex; justify-self: end; }
+.xm-widget-row .xm-widget-pomodoro {
+  position: absolute; top: 7px; right: 22px; z-index: 1;
+  background: var(--xm-header-surface) !important;
+}
+@container (max-width:320px){
+  .xm-widget-row{grid-template-columns:28px minmax(0,1fr) 22px;grid-template-areas:"check title expand" "category form importance" "streak progress progress";row-gap:5px}
+  .xm-widget-row .xm-widget-streak:empty,.xm-widget-row .xm-widget-progress:empty{display:none}
+  .xm-widget-row .xm-widget-pomodoro{top:auto;bottom:3px;right:3px}
+}
+.xm-widget-done-row { white-space: normal !important; overflow-wrap: anywhere; }
+.xm-widget-done-row .quest-title { overflow: visible !important; text-overflow: clip !important; }
+
+/* The timetable keeps a course's actual span of periods visible. */
+.xm-schedule-overlay {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  min-height: 0;
+  margin: 3px;
+  overflow: auto;
+}
+.xm-schedule-overlay > .xm-course-block { flex: 0 0 auto; }
+.xm-schedule-overlay > .xm-course-block:only-child { flex: 1 1 auto; }
+.xm-schedule-slot { position: relative; }
+.xm-schedule-slot-mark { position: absolute; width: 3px; height: 3px; right: 5px; top: 5px; background: var(--xm-focus); opacity: .45; }
+.xm-schedule-head, .xm-calendar-weekday { min-height: 34px; letter-spacing: .025em; }
+.xm-schedule-period { line-height: 1.5; }
+.xm-schedule-grid, .xm-calendar-grid { margin-top: 4px; }
+.xm-calendar-detail-backdrop { position: fixed; inset: 0; z-index: 1000; background: #0009; display: grid; place-items: center; padding: 20px; }
+.xm-calendar-detail-modal { width: min(680px, 100%); max-height: min(780px, 90vh); overflow: auto; color: var(--xm-header-text); }
+.xm-calendar-detail-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 12px; background: var(--xm-header-surface); border: 2px solid var(--xm-main-edge); border-bottom: 0; }
+.xm-calendar-day:focus-within, .xm-course-block:focus-within { outline: 2px solid var(--xm-focus); outline-offset: -2px; }
+
+/* Four skins use different materials on the same schedule/calendar layout. */
+:root[data-xm-theme="pixel-jrpg"] .xm-schedule-head,
+:root[data-xm-theme="pixel-jrpg"] .xm-calendar-weekday {
+  background-image: repeating-linear-gradient(90deg, transparent 0 10px, #67d6e810 10px 11px);
+  text-shadow: 0 1px 0 #060b1a;
+}
+:root[data-xm-theme="pixel-jrpg"] .xm-schedule-slot,
+:root[data-xm-theme="pixel-jrpg"] .xm-calendar-day { background-image: linear-gradient(160deg, #67d6e809, transparent 66%); }
+:root[data-xm-theme="pixel-jrpg"] .xm-course-block { outline: 1px solid #67d6e844; outline-offset: -3px; }
+
+:root[data-xm-theme="parchment-journal"] .xm-schedule-head,
+:root[data-xm-theme="parchment-journal"] .xm-calendar-weekday {
+  background-image: linear-gradient(180deg, #fff2d3a6, #aa7d4540);
+  text-shadow: 0 1px 0 #fff8e2;
+}
+:root[data-xm-theme="parchment-journal"] .xm-schedule-slot,
+:root[data-xm-theme="parchment-journal"] .xm-calendar-day {
+  background-image: repeating-linear-gradient(0deg, transparent 0 22px, #82633912 22px 23px);
+}
+:root[data-xm-theme="parchment-journal"] .xm-course-block {
+  border-radius: 3px;
+  background-image: linear-gradient(130deg, #fff3d680, transparent 75%);
+  box-shadow: inset 0 0 0 2px #674a2824, 1px 2px 3px #523a2530;
+}
+
+:root[data-xm-theme="animal-crossing"] .xm-schedule-head,
+:root[data-xm-theme="animal-crossing"] .xm-calendar-weekday {
+  background-image: linear-gradient(#fcfff0, #e4f1d5);
+  color: #688446;
+}
+:root[data-xm-theme="animal-crossing"] .xm-schedule-slot,
+:root[data-xm-theme="animal-crossing"] .xm-calendar-day {
+  background-image: radial-gradient(circle at 90% 15%, #8bc36b15 0 10px, transparent 11px);
+}
+:root[data-xm-theme="animal-crossing"] .xm-course-block {
+  border-radius: 11px;
+  box-shadow: inset 0 2px 0 #fff9, 0 3px 7px #6a8b3c22;
+}
+
+:root[data-xm-theme="stardew-valley"] .xm-schedule-head,
+:root[data-xm-theme="stardew-valley"] .xm-calendar-weekday {
+  background-image: url('./assets/themes/sv_wood_tile_clean.png');
+  background-size: 180px auto;
+  color: #fff1c8 !important;
+  text-shadow: 1px 2px 0 #513014;
+}
+:root[data-xm-theme="stardew-valley"] .xm-schedule-slot,
+:root[data-xm-theme="stardew-valley"] .xm-calendar-day {
+  background-image: url('./assets/themes/sv_parchment_tile_clean.png');
+  background-size: 180px auto;
+}
+:root[data-xm-theme="stardew-valley"] .xm-course-block {
+  background-image: linear-gradient(#fff1ca70, #bf8c3d25);
+  outline: 1px solid #684018;
+  outline-offset: -4px;
+}
+
+.xm-import-period-notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--xm-main-edge);
+  background: var(--xm-grid-head);
+  color: var(--xm-header-text);
+  line-height: 1.5;
+}
+.xm-import-period-notice > span { flex: 1 1 270px; }
+.xm-import-period-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 7px;
+  border: 1px solid var(--xm-main-edge);
+  color: var(--xm-header-text);
+  background: var(--xm-grid-head);
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.xm-theme-card { position: relative; isolation: isolate; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+.xm-theme-card:not(.is-active):hover { transform: translateY(-3px); filter: brightness(1.06); }
+.xm-theme-card:active { transform: translateY(0); }
+.xm-theme-card-image { overflow: hidden; box-shadow: inset 0 0 0 2px #fffa, 0 2px 7px #0005; }
+.xm-theme-card-image::after { content: ''; position: absolute; inset: 38% 0 0; background: linear-gradient(transparent, #09101fbb); pointer-events: none; }
+.xm-theme-card-chapter, .xm-theme-card-image-title { position: absolute; z-index: 1; color: #fff8e9; text-shadow: 0 2px 5px #000, 0 1px 2px #000; }
+.xm-theme-card-chapter { top: 9px; left: 11px; padding: 3px 6px; background: #121b2a99; font-size: 10px; letter-spacing: .12em; }
+.xm-theme-card-image-title { bottom: 8px; left: 12px; font-size: 19px; letter-spacing: .08em; }
+.xm-theme-card-parchment-journal .xm-theme-card-chapter { background: #4b3526ad; }
+.xm-theme-card-animal-crossing .xm-theme-card-chapter { background: #547b55a8; border-radius: 9px; }
+.xm-theme-card-stardew-valley .xm-theme-card-chapter { background: #563015b8; }
+.xm-theme-card-stardew-valley .xm-theme-card-image-title { text-shadow: 2px 2px 0 #542d16, 0 2px 6px #000; }
+@media (max-height: 560px) {
+  .xm-widget-titlebar { height: 42px !important; font-size: 15px !important; }
+  .xm-widget-titlebar img, .xm-widget-titlebar svg { width: 23px !important; height: 23px !important; }
+  .xm-widget-header { padding: 3px 8px !important; }
+  .xm-widget-list { padding-bottom: 4px !important; }
+  .xm-widget-footer { min-height: 28px !important; padding: 2px 8px !important; font-size: 10px !important; }
+}
+@media (max-height: 300px) {
+  .xm-widget-header { padding: 0 8px !important; }
+  .xm-widget-footer { display: none !important; }
+}
+@media (max-height: 360px) {
+  .xm-widget-xp { display: none !important; }
+  .xm-widget-header { padding: 0 8px !important; }
+  .xm-widget-empty { min-height: 0 !important; padding: 4px 8px !important; }
+  .xm-widget-empty-body { gap: 4px !important; justify-content: flex-start !important; }
+  .xm-widget-empty-art { display: block; width: 62px; height: 62px; }
+  .xm-widget-empty-art > * { transform: scale(.525); transform-origin: top left; }
+  .xm-widget-empty-body strong { font-size: 13px !important; }
+  .xm-widget-empty-body > span:last-child { font-size: 11px !important; }
+}
+@media (max-height: 220px) {
+  .xm-widget-wallet { display: none !important; }
+  .xm-widget-titlebar { height: 34px !important; }
+}
+@media (max-height: 180px) { .xm-widget-xp { display: none !important; } }
+:root[data-xm-theme="animal-crossing"] .xm-widget-frame { border-radius: 25px !important; }
+:root[data-xm-theme="animal-crossing"] .xm-widget-titlebar { border-radius: 23px 23px 0 0; }
+:root[data-xm-theme="parchment-journal"] .xm-widget-titlebar { letter-spacing: .12em; }
+:root[data-xm-theme="stardew-valley"] .xm-widget-titlebar { text-shadow: 1px 2px 0 #432616; }
+
+@media (max-width: 1050px) {
+  .xm-main { padding: 16px !important; }
+  .xm-page-kicker { margin: -16px -16px 18px; padding: 12px 16px; }
+}
+@media (max-width: 740px) {
+  .xm-scene, .xm-scene-divider { display: none; }
+  .xm-theme-grid { grid-template-columns: 1fr !important; }
+  .xm-nav { width: 62px !important; padding-inline: 5px !important; }
+  .xm-brand { font-size: 0 !important; }
+  .xm-nav-item { justify-content: center; font-size: 0 !important; padding: 8px 4px !important; }
+  .xm-nav-item span { display: none; }
+  .xm-nav > button:last-child { font-size: 0 !important; justify-content: center; padding: 8px 4px !important; }
+  .xm-main { padding: 16px !important; }
+  .xm-page-kicker { margin: -16px -16px 18px; padding: 12px 16px; }
+  .xm-page-kicker span:last-child { display: none; }
+}
+.xm-lottery-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.xm-lottery-panel{container-type:inline-size}
+.xm-lottery-layout{display:grid;grid-template-columns:minmax(280px,306px) minmax(0,1fr);align-items:center;gap:clamp(14px,3vw,28px);margin-top:22px;min-width:0}
+.xm-lottery-wheel-wrap{--wheel-size:282px;--light-offset:-131px;--label-offset:-78px;--needle-length:118px;width:100%;min-width:0;min-height:348px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 0 5px;isolation:isolate}
+.xm-lottery-topper{position:absolute;top:1px;left:50%;transform:translateX(-50%);z-index:5;font-family:var(--xm-font-display,inherit);font-size:24px;line-height:1;color:var(--xm-accent,#a96722);text-shadow:0 2px 3px #0007}
+.xm-lottery-pointer{position:absolute;z-index:5;top:24px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:30px solid var(--xm-accent,#a96722);filter:drop-shadow(0 2px 1px #0007)}
+.xm-lottery-rim{width:var(--wheel-size);height:var(--wheel-size);box-sizing:border-box;position:relative;display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#fff9,var(--xm-gold-dark,#9e702c) 25%,#24180f 52%,var(--xm-gold-dark,#9e702c) 78%,#fff7);border:6px solid var(--xm-gold-dark,#9e702c);box-shadow:0 6px 0 #0005,0 14px 22px #0005,inset 0 0 0 3px #fff6,inset 0 0 0 7px #0006}
+.xm-lottery-light{position:absolute;left:calc(50% - 3px);top:calc(50% - 3px);width:6px;height:6px;border-radius:50%;background:#fff2a8;box-shadow:0 0 6px #fff2a8,inset 0 0 1px #fff;pointer-events:none}
+.xm-lottery-wheel{width:calc(var(--wheel-size) - 34px);height:calc(var(--wheel-size) - 34px);box-sizing:border-box;position:relative;border-radius:50%;border:3px solid #24180f99;box-shadow:inset 0 0 0 4px #fff7,inset 0 0 20px #0005;transition:transform var(--spin-duration) cubic-bezier(.12,.68,.09,1);will-change:transform}
+.xm-lottery-wheel::before{content:"";position:absolute;inset:7px;border-radius:50%;border:1px dashed #fffa;pointer-events:none}
+.xm-lottery-segment-label{position:absolute;left:calc(50% - 34px);top:calc(50% - 18px);width:68px;height:36px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px;text-align:center;color:#1d1b14;text-shadow:0 1px 0 #fff9;background:#fff3d8c9;border:1px solid #6a482259;border-radius:4px;pointer-events:none}
+.xm-lottery-segment-label b{font-size:17px;line-height:1}
+.xm-lottery-segment-label small{max-width:68px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;font-weight:700;line-height:1.15}
+.xm-lottery-segment-label.is-compact{left:calc(50% - 14px);width:28px;height:28px;top:calc(50% - 14px);border-radius:50%}
+.xm-lottery-hub{position:absolute;z-index:3;width:67px;height:67px;border:5px double var(--xm-gold-dark,#9e702c);border-radius:50%;background:radial-gradient(circle at 32% 24%,#fff8,var(--xm-panel,#f1e5c8) 64%,var(--xm-gold-dark,#9e702c));box-shadow:0 3px 10px #0008,0 0 0 2px #fff9;display:grid;place-items:center;pointer-events:none}
+.xm-lottery-hub span{font-size:27px;color:var(--xm-accent,#a96722);text-shadow:0 1px 1px #fff9}
+.xm-lottery-wheel-caption{font-family:var(--xm-font-display,inherit);font-size:12px;letter-spacing:.08em;color:var(--xm-accent,#a96722);text-align:center}
+.xm-lottery-pixel-jrpg .xm-lottery-rim{border-radius:18%;clip-path:polygon(15% 0,85% 0,100% 15%,100% 85%,85% 100%,15% 100%,0 85%,0 15%);background:linear-gradient(135deg,#f9d46c,#8b5d20 25%,#172451 52%,#f9d46c);border-color:#f9c74a}
+.xm-lottery-pixel-jrpg .xm-lottery-wheel{border-radius:18%;clip-path:polygon(15% 0,85% 0,100% 15%,100% 85%,85% 100%,15% 100%,0 85%,0 15%)}
+.xm-lottery-pixel-jrpg .xm-lottery-hub{border-radius:14%;background:#18214b}
+.xm-lottery-pixel-jrpg .xm-lottery-segment-label{color:#fff8d2;text-shadow:1px 2px #08112c;background:#0d173dda;border:1px solid #f6c74d;border-radius:0}
+.xm-lottery-parchment-journal .xm-lottery-rim{background:repeating-conic-gradient(from 0deg,#8a612f 0 12deg,#d2a76e 12deg 24deg);border-color:#785936}
+.xm-lottery-parchment-journal .xm-lottery-hub{background:#efe0be;border-color:#7a5429}
+.xm-lottery-animal-crossing .xm-lottery-rim{border:9px solid #76b75e;background:#fbf8e9;box-shadow:0 8px 16px #587d5570,inset 0 0 0 6px #f6d9a6}
+.xm-lottery-animal-crossing .xm-lottery-wheel{border:5px solid #e6f5c9;box-shadow:inset 0 0 0 3px #fff9}
+.xm-lottery-animal-crossing .xm-lottery-hub{border-color:#70b75b;background:#f9f6e8;box-shadow:0 3px 10px #556c4366}
+.xm-lottery-animal-crossing .xm-lottery-light{background:#fff8dc;box-shadow:0 0 0 2px #91c973}
+.xm-lottery-stardew-valley .xm-lottery-rim{border:11px ridge #8c4d1d;background:repeating-conic-gradient(#a96930 0 15deg,#6f3d1c 15deg 30deg);box-shadow:0 8px 0 #3d2418,0 14px 16px #241509aa,inset 0 0 0 3px #e2ad5c}
+.xm-lottery-stardew-valley .xm-lottery-wheel{border:4px solid #412713;image-rendering:pixelated}
+.xm-lottery-stardew-valley .xm-lottery-hub{border:6px ridge #70401e;background:#e1ad55;border-radius:12%}
+.xm-lottery-stardew-valley .xm-lottery-segment-label{color:#4b2c17;text-shadow:1px 1px #fff9;font-family:"Ark Pixel CN",monospace}
+.xm-lottery-info{min-width:0;width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.xm-slot-machine{position:relative;width:min(100%,310px);padding:13px 13px 17px;box-sizing:border-box;border:6px solid #e9bc5c;border-radius:14px;background:linear-gradient(145deg,#203a7c,#0d1636 68%,#293c78);box-shadow:0 8px 0 #0b1738,0 14px 24px #0007,inset 0 0 0 3px #654723,inset 0 0 20px #020724;overflow:hidden}
+.xm-slot-marquee{text-align:center;min-height:38px;padding:6px 8px 9px;box-sizing:border-box;border:2px solid #efcd72;background:#0b1a43;color:#ffe9aa;font-size:15px;letter-spacing:.12em;font-weight:900;text-shadow:0 0 8px #ffe6a3}
+.xm-slot-reels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:13px 0;position:relative}
+.xm-slot-reel{height:105px;overflow:hidden;position:relative;border:3px solid #d3ab58;background:linear-gradient(#e8daaf,#fff8d9 48%,#e9d8aa);box-shadow:inset 0 0 10px #6e541c9c,0 2px 0 #060d2b}
+.xm-slot-reel::before,.xm-slot-reel::after{content:"";position:absolute;left:0;right:0;height:16px;z-index:2;pointer-events:none}.xm-slot-reel::before{top:0;background:linear-gradient(#52421e88,transparent)}.xm-slot-reel::after{bottom:0;background:linear-gradient(transparent,#52421e88)}
+.xm-slot-track{display:flex;flex-direction:column;align-items:stretch;justify-content:center;min-height:100%}.xm-slot-reel.is-rolling .xm-slot-track{justify-content:flex-start;animation:xm-slot-roll calc(.27s + var(--reel-number)*.09s) linear infinite}.xm-slot-reel.is-settled{animation:xm-slot-settle .38s cubic-bezier(.18,1.6,.45,1)}
+.xm-slot-symbol{height:99px;flex:none;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;color:#3f2c16}.xm-slot-symbol b{font-size:30px;line-height:1;color:#be8b32;text-shadow:0 1px #fff,0 0 9px #f8d98f}.xm-slot-symbol small{display:block;max-width:100%;padding:0 2px;box-sizing:border-box;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;font-weight:800}
+.xm-slot-payline{position:absolute;left:5px;right:5px;top:50%;height:2px;background:#ffe6999e;box-shadow:0 0 9px #ffdb65;pointer-events:none;opacity:.75}.xm-slot-foot{display:flex;justify-content:space-between;color:#fae3a0;font-size:10px;letter-spacing:.1em}
+.xm-lottery-stardew-valley .xm-slot-machine{border:7px ridge #a5632c;border-radius:7px;background:repeating-linear-gradient(90deg,#75421f 0 18px,#865029 18px 36px);box-shadow:0 7px 0 #4e2c18,0 13px 19px #0006,inset 0 0 0 3px #dba25a}
+.xm-lottery-stardew-valley .xm-slot-marquee{border:3px ridge #7d491e;background:#efc979;color:#60361b;font-family:"Ark Pixel CN",monospace;font-size:14px;text-shadow:1px 1px #ffe5a1;box-shadow:inset 0 1px 0 #fff8}
+.xm-lottery-stardew-valley .xm-slot-reel{border:4px ridge #895328;background:#f4dfa9;border-radius:2px;box-shadow:inset 0 0 7px #98693288}.xm-lottery-stardew-valley .xm-slot-symbol{font-family:"Ark Pixel CN",monospace}.xm-lottery-stardew-valley .xm-slot-symbol b{color:#db8b25;text-shadow:2px 2px #6e3f20;font-size:31px}.xm-lottery-stardew-valley .xm-slot-foot{color:#ffe0a6;font-family:"Ark Pixel CN",monospace}
+@keyframes xm-slot-roll{from{transform:translateY(-33.333%)}to{transform:translateY(-66.666%)}}@keyframes xm-slot-settle{from{transform:translateY(-18px);filter:brightness(1.5)}to{transform:translateY(0);filter:brightness(1)}}
+.xm-lottery-prizes{width:100%;display:grid;grid-template-columns:1fr;gap:8px}
+.xm-lottery-prize{display:flex;align-items:center;gap:7px;min-width:0;font-size:13px}
+.xm-lottery-prize span{width:13px;height:13px;border:1px solid #0004;flex:none}
+.xm-lottery-prize strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xm-lottery-prize small{margin-left:auto;white-space:nowrap;opacity:.72}
+.xm-lottery-result{font-size:16px;font-weight:700;color:var(--xm-accent,#a96722)}
+.xm-lottery-editor{border-top:1px solid #8d6e4e66;margin-top:22px;padding-top:16px}
+.xm-lottery-rules,.xm-lottery-edit-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
+.xm-lottery-rules label{display:flex;align-items:center;gap:8px}
+.xm-lottery-edit-row input:first-child{flex:1;min-width:140px}
+.xm-lottery-history{margin-top:18px;font-size:12px;line-height:2}
+.xm-lottery-history summary{cursor:pointer;font-weight:700}
+@container (max-width:680px){.xm-lottery-layout{grid-template-columns:minmax(0,1fr);gap:10px}.xm-lottery-wheel-wrap{margin:auto;max-width:306px}.xm-lottery-info{align-items:stretch}.xm-lottery-prizes{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}.xm-lottery-prize{flex-wrap:wrap}.xm-lottery-prize small{width:100%;padding-left:20px;margin:0}.xm-lottery-heading>div{min-width:0}}
+@container (max-width:430px){.xm-lottery-wheel-wrap{--wheel-size:224px;--light-offset:-102px;--label-offset:-62px;--needle-length:91px;min-height:294px}.xm-lottery-prizes{grid-template-columns:1fr}.xm-lottery-prize{flex-wrap:nowrap}.xm-lottery-prize small{width:auto;padding:0;margin-left:auto}.xm-lottery-edit-row{display:grid;grid-template-columns:1fr 1fr}.xm-lottery-edit-row input:first-child{grid-column:1/-1;min-width:0}.xm-lottery-edit-row>*{max-width:100%}}
+.xm-lottery-motif{position:absolute;inset:20px 0 42px;pointer-events:none;z-index:4}
+.xm-lottery-motif i{position:absolute;display:block;left:50%;top:50%;opacity:0}
+.xm-lottery-pixel-jrpg .xm-lottery-wheel{transition-timing-function:steps(44,end)}
+.xm-lottery-pixel-jrpg.is-spinning .xm-lottery-rim{animation:xm-arcane-flash .36s steps(2,end) infinite}
+.xm-lottery-pixel-jrpg .xm-lottery-motif i{width:6px;height:6px;background:#ffe492;box-shadow:0 0 16px #ffdc65}
+.xm-lottery-pixel-jrpg.is-spinning .xm-lottery-motif i{opacity:1;animation:xm-arcane-spark 1s steps(6,end) infinite}
+.xm-lottery-parchment-journal .xm-lottery-wheel{transition-timing-function:cubic-bezier(.08,.66,.09,1)}
+.xm-lottery-parchment-journal .xm-lottery-pointer{display:none}
+.xm-lottery-compass-needle{position:absolute;z-index:2;left:calc(50% - 3px);top:calc(50% - var(--needle-length));height:var(--needle-length);width:6px;border:1px solid #e2bd79;background:linear-gradient(90deg,#51321a 0 45%,#b94d34 45%);box-shadow:1px 2px 3px #31200f99;transform-origin:50% 100%;transition:transform var(--spin-duration) cubic-bezier(.09,.75,.14,1)}
+.xm-lottery-compass-needle::before{content:"";position:absolute;bottom:100%;left:-6px;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:20px solid #9c442c;filter:drop-shadow(0 1px 1px #4a291c)}
+.xm-lottery-parchment-journal.is-spinning .xm-lottery-compass-needle{filter:drop-shadow(0 0 6px #f6d888)}
+.xm-lottery-parchment-journal .xm-lottery-motif i{width:3px;height:16px;background:#9a693a}
+.xm-lottery-parchment-journal.is-spinning .xm-lottery-motif i{opacity:.8;animation:xm-dust-orbit 2.2s linear infinite}
+.xm-lottery-animal-crossing .xm-lottery-wheel{transition:none}
+.xm-lottery-animal-crossing .xm-lottery-pointer{border:0;width:22px;height:22px;border-radius:3px 85% 3px 85%;background:#69aa4b;transform:translateX(-50%) rotate(45deg);top:14px;box-shadow:0 2px 0 #407b32}
+.xm-lottery-animal-crossing.is-spinning .xm-lottery-rim{animation:xm-flower-bloom .8s ease-in-out infinite alternate}
+.xm-lottery-animal-crossing.is-spinning .xm-lottery-segment-label{animation:xm-petal-reveal .85s ease-in-out infinite alternate;animation-delay:var(--petal-delay);background:#fff1bee8}
+.xm-lottery-animal-crossing.has-result .xm-lottery-segment-label.is-selected{background:#fff5bddf;box-shadow:0 0 0 4px #76bf60,0 0 16px #f9cc71;filter:brightness(1.12)}
+.xm-lottery-animal-crossing .xm-lottery-motif i{width:15px;height:10px;border-radius:80% 10% 80% 10%;background:#f9c2a6}
+.xm-lottery-animal-crossing.is-spinning .xm-lottery-motif i{opacity:1;animation:xm-petal-fly 2s ease-in-out infinite}
+.xm-lottery-stardew-valley .xm-lottery-rim,.xm-lottery-stardew-valley .xm-lottery-wheel{border-radius:16%;clip-path:polygon(10% 0,90% 0,100% 10%,100% 90%,90% 100%,10% 100%,0 90%,0 10%)}
+.xm-lottery-stardew-valley .xm-lottery-wheel{transition-timing-function:steps(32,end)}
+.xm-lottery-stardew-valley .xm-lottery-pointer{border-top-color:#8d4f1e}
+.xm-lottery-stardew-valley.is-spinning .xm-lottery-pointer{animation:xm-wood-ratchet .15s steps(2,end) infinite}
+.xm-lottery-stardew-valley .xm-lottery-motif i{width:9px;height:13px;border:2px solid #865321;background:#e9b84c;border-radius:50%}
+.xm-lottery-stardew-valley.is-spinning .xm-lottery-motif i{opacity:1;animation:xm-seed-hop 1.1s steps(5,end) infinite}
+.xm-lottery-motif i:nth-child(2){animation-delay:-.25s!important}.xm-lottery-motif i:nth-child(3){animation-delay:-.5s!important}.xm-lottery-motif i:nth-child(4){animation-delay:-.75s!important}
+@keyframes xm-arcane-flash{50%{filter:brightness(1.7) drop-shadow(0 0 9px #f7d65d)}}
+@keyframes xm-arcane-spark{0%{transform:translate(-110px,-110px)}25%{transform:translate(100px,-100px)}50%{transform:translate(100px,100px)}75%{transform:translate(-100px,100px)}100%{transform:translate(-110px,-110px)}}
+@keyframes xm-compass-needle{from{transform:translateX(-50%) rotate(-12deg)}to{transform:translateX(-50%) rotate(12deg)}}
+@keyframes xm-dust-orbit{from{transform:rotate(0deg) translateX(125px) rotate(0deg)}to{transform:rotate(360deg) translateX(125px) rotate(-360deg)}}
+@keyframes xm-flower-bloom{to{filter:saturate(1.3) brightness(1.1);transform:scale(1.035)}}
+@keyframes xm-petal-fly{0%{transform:translate(-100px,90px) rotate(0);opacity:0}35%{opacity:1}100%{transform:translate(100px,-90px) rotate(540deg);opacity:0}}
+@keyframes xm-petal-reveal{from{filter:brightness(.9);box-shadow:0 0 0 #fff0}to{filter:brightness(1.28);box-shadow:0 0 0 4px #f9efb8}}
+@keyframes xm-wood-ratchet{to{transform:translateX(-50%) translateY(4px)}}
+@keyframes xm-seed-hop{0%{transform:translate(-110px,75px);opacity:0}35%{opacity:1}100%{transform:translate(100px,-75px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.xm-lottery-wheel,.xm-lottery-compass-needle{transition-duration:.01ms}.xm-lottery-motif i,.xm-lottery-rim,.xm-lottery-pointer,.xm-lottery-segment-label{animation:none!important}}

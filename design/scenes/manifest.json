@@ -1,0 +1,218 @@
+[
+  {
+    "theme": "pixel-jrpg",
+    "phase": "dawn",
+    "width": 1920,
+    "height": 768,
+    "sourceBytes": 2607163,
+    "bytes": 315500,
+    "path": "public/scenes/pixel-jrpg/dawn.webp"
+  },
+  {
+    "theme": "pixel-jrpg",
+    "phase": "morning",
+    "width": 1920,
+    "height": 768,
+    "sourceBytes": 2670120,
+    "bytes": 344704,
+    "path": "public/scenes/pixel-jrpg/morning.webp"
+  },
+  {
+    "theme": "pixel-jrpg",
+    "phase": "noon",
+    "width": 1920,
+    "height": 768,
+    "sourceBytes": 2777168,
+    "bytes": 367652,
+    "path": "public/scenes/pixel-jrpg/noon.webp"
+  },
+  {
+    "theme": "pixel-jrpg",
+    "phase": "sunset",
+    "width": 1920,
+    "height": 768,
+    "sourceBytes": 2623904,
+    "bytes": 322744,
+    "path": "public/scenes/pixel-jrpg/sunset.webp"
+  },
+  {
+    "theme": "pixel-jrpg",
+    "phase": "night",
+    "width": 1920,
+    "height": 768,
+    "sourceBytes": 2579628,
+    "bytes": 286508,
+    "path": "public/scenes/pixel-jrpg/night.webp"
+  },
+  {
+    "theme": "pixel-jrpg",
+    "phase": "predawn",
+    "width": 1920,
+    "height": 768,
+    "sourceBytes": 2384196,
+    "bytes": 227604,
+    "path": "public/scenes/pixel-jrpg/predawn.webp"
+  },
+  {
+    "theme": "parchment-journal",
+    "phase": "dawn",
+    "width": 1619,
+    "height": 971,
+    "sourceBytes": 2576099,
+    "bytes": 270948,
+    "path": "public/scenes/parchment-journal/dawn.webp"
+  },
+  {
+    "theme": "parchment-journal",
+    "phase": "morning",
+    "width": 1619,
+    "height": 971,
+    "sourceBytes": 2879701,
+    "bytes": 378316,
+    "path": "public/scenes/parchment-journal/morning.webp"
+  },
+  {
+    "theme": "parchment-journal",
+    "phase": "noon",
+    "width": 1620,
+    "height": 971,
+    "sourceBytes": 2930589,
+    "bytes": 393572,
+    "path": "public/scenes/parchment-journal/noon.webp"
+  },
+  {
+    "theme": "parchment-journal",
+    "phase": "sunset",
+    "width": 1619,
+    "height": 971,
+    "sourceBytes": 2637328,
+    "bytes": 303230,
+    "path": "public/scenes/parchment-journal/sunset.webp"
+  },
+  {
+    "theme": "parchment-journal",
+    "phase": "night",
+    "width": 1620,
+    "height": 971,
+    "sourceBytes": 2656128,
+    "bytes": 270376,
+    "path": "public/scenes/parchment-journal/night.webp"
+  },
+  {
+    "theme": "parchment-journal",
+    "phase": "predawn",
+    "width": 1620,
+    "height": 971,
+    "sourceBytes": 2452262,
+    "bytes": 206212,
+    "path": "public/scenes/parchment-journal/predawn.webp"
+  },
+  {
+    "theme": "animal-crossing",
+    "phase": "dawn",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 2422176,
+    "bytes": 208570,
+    "path": "public/scenes/animal-crossing/dawn.webp"
+  },
+  {
+    "theme": "animal-crossing",
+    "phase": "morning",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 2514835,
+    "bytes": 232462,
+    "path": "public/scenes/animal-crossing/morning.webp"
+  },
+  {
+    "theme": "animal-crossing",
+    "phase": "noon",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 2628016,
+    "bytes": 260794,
+    "path": "public/scenes/animal-crossing/noon.webp"
+  },
+  {
+    "theme": "animal-crossing",
+    "phase": "sunset",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 2439373,
+    "bytes": 225310,
+    "path": "public/scenes/animal-crossing/sunset.webp"
+  },
+  {
+    "theme": "animal-crossing",
+    "phase": "night",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 2465382,
+    "bytes": 216582,
+    "path": "public/scenes/animal-crossing/night.webp"
+  },
+  {
+    "theme": "animal-crossing",
+    "phase": "predawn",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 2431437,
+    "bytes": 190120,
+    "path": "public/scenes/animal-crossing/predawn.webp"
+  },
+  {
+    "theme": "stardew-valley",
+    "phase": "dawn",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 2850491,
+    "bytes": 339498,
+    "path": "public/scenes/stardew-valley/dawn.webp"
+  },
+  {
+    "theme": "stardew-valley",
+    "phase": "morning",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 3344845,
+    "bytes": 467164,
+    "path": "public/scenes/stardew-valley/morning.webp"
+  },
+  {
+    "theme": "stardew-valley",
+    "phase": "noon",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 3311305,
+    "bytes": 471820,
+    "path": "public/scenes/stardew-valley/noon.webp"
+  },
+  {
+    "theme": "stardew-valley",
+    "phase": "sunset",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 2774780,
+    "bytes": 351336,
+    "path": "public/scenes/stardew-valley/sunset.webp"
+  },
+  {
+    "theme": "stardew-valley",
+    "phase": "night",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 2785506,
+    "bytes": 313746,
+    "path": "public/scenes/stardew-valley/night.webp"
+  },
+  {
+    "theme": "stardew-valley",
+    "phase": "predawn",
+    "width": 1920,
+    "height": 720,
+    "sourceBytes": 2535058,
+    "bytes": 222960,
+    "path": "public/scenes/stardew-valley/predawn.webp"
+  }
+]

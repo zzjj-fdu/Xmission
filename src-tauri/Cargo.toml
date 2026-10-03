@@ -1,0 +1,35 @@
+[package]
+name = "xmission"
+version = "0.67.0"
+description = "Xmission - gamified desktop taskbar"
+license = "PolyForm-Noncommercial-1.0.0"
+edition = "2021"
+
+[lib]
+name = "xmission_lib"
+# 偏差说明：契约要求 ["staticlib", "cdylib", "rlib"]，但 windows-gnu 下 rustc
+# 在同一调用中编译多种 crate-type 时会按可见性并集给 cdylib 标记 dllexport，
+# 导致导出 10 万+ 符号、超出 PE 65535 上限无法链接（rust-lang 已知限制）。
+# cdylib/staticlib 仅移动端需要；且 staticlib 的全 crate LTO 链接在
+# rust-lld + windows-gnu 下会间歇性产出损坏的 PE（0xc0000139），桌面端只需 rlib。
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
+tokio = { version = "1", features = ["full"] }
+chrono = "0.4"
+uuid = { version = "1", features = ["v4"] }
+# M3：课表文件解析（xlsx/xls）
+calamine = "0.36"
+# M3：LLM HTTP 调用（rustls 避免依赖系统 OpenSSL）
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+# M3：API Key 存 OS 钥匙串（windows-native 必须显式开启，否则 3.x 默认退化为内存 mock，进程退出即丢）
+keyring = { version = "3", features = ["windows-native"] }
+# M3：图片 base64 解码校验
+base64 = "0.22"

@@ -1,0 +1,66 @@
+.xm-scenefx{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;contain:paint;--rain:#bedef8;--snow:#f8fcff;--leaf:#cba253;--haze:#dceaf1}
+.xm-scenefx.theme-pixel-jrpg{--rain:#86d8ff;--snow:#dfefff;--leaf:#83adbd;--haze:#b3c7ec}
+.xm-scenefx.theme-parchment-journal{--rain:#c1b396;--snow:#fff4dc;--leaf:#c3a778;--haze:#e1d5be}
+.xm-scenefx.theme-animal-crossing{--rain:#c4efff;--snow:#fffdf4;--leaf:#a3c780;--haze:#e3f1ed}
+.xm-scenefx.theme-stardew-valley{--rain:#b2d4e9;--snow:#f4f7e9;--leaf:#c79544;--haze:#cad7d8}
+.xm-scenefx-tint{position:absolute;inset:0}
+.xm-scenefx.weather-cloudy .xm-scenefx-tint{background:linear-gradient(#71839a30,#8d9d9f12)}
+.xm-scenefx.weather-rain .xm-scenefx-tint{background:linear-gradient(#30485d50,#47718420)}
+.xm-scenefx.weather-snow .xm-scenefx-tint{background:linear-gradient(#becfe138,#eff8ff12)}
+.xm-scenefx.weather-fog .xm-scenefx-tint{background:linear-gradient(#a1b9bd25,#d6e1df55)}
+.xm-scenefx-clouds,.xm-scenefx-fog{position:absolute;inset:0}
+.xm-scenefx-clouds b{position:absolute;left:-20%;top:-20%;width:140%;height:58%;background:radial-gradient(ellipse at 25% 30%,var(--haze),transparent 57%);opacity:.18;animation:xm-fx-cloud 80s ease-in-out infinite alternate}
+.xm-scenefx-clouds b+ b{top:-8%;left:0;opacity:.12;animation-delay:-35s;animation-duration:110s}
+.xm-scenefx-fog b{position:absolute;left:-15%;top:20%;width:130%;height:42%;background:radial-gradient(ellipse,var(--haze),transparent 70%);opacity:.36;animation:xm-fx-cloud 65s ease-in-out infinite alternate}
+.xm-scenefx-fog b:nth-child(2){top:45%;opacity:.26;animation-delay:-22s;animation-duration:95s}.xm-scenefx-fog b:nth-child(3){top:68%;opacity:.3;animation-delay:-47s}
+.xm-scenefx-particle{position:absolute;display:block;left:var(--x);top:-7%;width:5px;height:5px;animation:xm-fx-fall var(--duration) linear var(--delay) infinite;opacity:0;scale:var(--scale)}
+.xm-scenefx-particle.is-near{z-index:2}
+.xm-scenefx-particle.is-rain{height:23px;width:2px;border-radius:3px;background:linear-gradient(transparent,var(--rain));animation-name:xm-fx-rain}
+.theme-pixel-jrpg .is-rain,.theme-stardew-valley .is-rain{width:3px;height:15px;border-radius:0;background:var(--rain);animation-timing-function:steps(28)}
+.theme-parchment-journal .is-rain{width:1px;height:32px;animation-duration:calc(var(--duration) * 1.4)}
+.theme-animal-crossing .is-rain{width:3px;height:17px;border-radius:60% 60% 80% 80%;background:linear-gradient(transparent,#dbf5ffcc)}
+.xm-scenefx-particle.is-snow{background:var(--snow);border-radius:50%;width:7px;height:7px;box-shadow:0 0 4px #fff4}
+.theme-pixel-jrpg .is-snow,.theme-stardew-valley .is-snow{border-radius:0;width:5px;height:5px;box-shadow:2px 2px #99abc477;animation-timing-function:steps(100)}
+.theme-parchment-journal .is-snow{width:4px;height:4px;box-shadow:none}
+.xm-scenefx-particle.is-petal{width:12px;height:8px;border-radius:90% 10% 80% 25%;background:#ffcfdf;box-shadow:inset 1px 1px #fffa;animation-name:xm-fx-petal}
+.xm-scenefx-particle.is-paper{width:5px;height:3px;background:#f8e3b7;box-shadow:0 0 3px #ffe7b244;animation-name:xm-fx-petal}
+.xm-scenefx-particle.is-leaf{width:10px;height:6px;border-radius:70% 10% 80% 15%;background:var(--leaf);box-shadow:inset 1px 1px #e9bf7499;animation-name:xm-fx-petal}
+.theme-pixel-jrpg .is-leaf{border-radius:0;clip-path:polygon(0 40%,40% 0,100% 40%,60% 100%)}
+.xm-scenefx-particle.is-star,.xm-scenefx-particle.is-spark{top:calc(var(--y) * .48);width:3px;height:3px;background:#f2f3cf;box-shadow:0 0 5px #bbddfc;animation-name:xm-fx-twinkle}
+.xm-scenefx-particle.is-spark{top:var(--y);background:#e8dfa8;box-shadow:none}
+.xm-scenefx-particle.is-meteor{top:calc(var(--y) * .4);width:90px;height:2px;background:linear-gradient(90deg,transparent,#bfe9ff,#fff);animation-name:xm-fx-meteor}
+.xm-scenefx-particle.is-firefly{top:calc(40% + var(--y) * .7);width:4px;height:4px;border-radius:50%;background:#ebf3a0;box-shadow:0 0 7px 2px #e5f08e80;animation-name:xm-fx-firefly}
+.xm-scenefx-particle.is-watermark{top:var(--y);width:42px;height:30px;border:1px solid #eee2c158;border-radius:50%;background:radial-gradient(ellipse,transparent 50%,#cfb88f20);animation-name:xm-fx-watermark}
+.xm-scenefx-particle.is-breeze{top:var(--y);width:110px;height:1px;background:linear-gradient(90deg,transparent,#eaf3ef80,transparent);animation-name:xm-fx-breeze}
+.weather-wind .is-petal,.weather-wind .is-leaf,.weather-wind .is-paper{top:var(--y);animation-name:xm-fx-wind}
+.xm-scenefx-ground{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;--snow-light:#fffef6;--snow-body:#e8f1ed;--snow-shade:#b6cdd9;--snow-shadow:#446277;--pool-sky:#b2dce7;--pool-body:#7695a3;--pool-shadow:#354d57;--pool-glint:#e8f7ed}
+.theme-pixel-jrpg .xm-scenefx-ground{--snow-light:#eff9ff;--snow-body:#d5e5f5;--snow-shade:#8fadd3;--snow-shadow:#253754;--pool-sky:#b1dcf3;--pool-body:#497999;--pool-shadow:#1b344e;--pool-glint:#d4f3ff}
+.theme-parchment-journal .xm-scenefx-ground{--snow-light:#fff6e5;--snow-body:#eee6d4;--snow-shade:#c6c7bc;--snow-shadow:#6e766f;--pool-sky:#dedace;--pool-body:#91a09e;--pool-shadow:#575e55;--pool-glint:#f8ecd1}
+.theme-animal-crossing .xm-scenefx-ground{--snow-light:#fffef7;--snow-body:#eef7f0;--snow-shade:#c0d9db;--snow-shadow:#658584;--pool-sky:#d5f3ee;--pool-body:#89c9cf;--pool-shadow:#487f83;--pool-glint:#f9fff2}
+.theme-stardew-valley .xm-scenefx-ground{--snow-light:#fff9e7;--snow-body:#e7eee4;--snow-shade:#aec8c9;--snow-shadow:#4f6765;--pool-sky:#c2dedb;--pool-body:#7fa6a8;--pool-shadow:#3c6267;--pool-glint:#edf2ce}
+.phase-dawn .xm-scenefx-ground{--snow-light:#fff0d9;--snow-body:#e4dde5;--snow-shade:#afbacf;--pool-glint:#ffe7c3}
+.phase-sunset .xm-scenefx-ground{--snow-light:#ffead6;--snow-body:#e7d9d7;--snow-shade:#b4a5bd;--pool-glint:#ffe1a9}
+.phase-night .xm-scenefx-ground,.phase-predawn .xm-scenefx-ground{--snow-light:#b9d2e4;--snow-body:#8ea9c1;--snow-shade:#607992;--snow-shadow:#26384e;--pool-sky:#536b86;--pool-body:#314658;--pool-shadow:#182a3c;--pool-glint:#bfd3d7}
+.theme-parchment-journal.phase-night .xm-scenefx-ground{--snow-light:#d4d1be;--snow-body:#b1b6af;--snow-shade:#7b8991;--pool-glint:#dbccb0}
+.theme-stardew-valley.phase-night .xm-scenefx-ground,.theme-animal-crossing.phase-night .xm-scenefx-ground{--pool-glint:#f1d9a9}
+.xm-scenefx-ripple{fill:none;stroke:var(--pool-glint);stroke-width:1;opacity:0;transform-box:fill-box;transform-origin:center;animation:xm-fx-ripple 3.8s ease-out var(--ripple-delay) infinite}
+.xm-scenefx-ground.is-pixel .xm-scenefx-ripple{stroke-width:1.2;animation-timing-function:steps(20)}
+.theme-parchment-journal .xm-scenefx-ripple{stroke-width:.75;animation-duration:5.2s}
+.theme-animal-crossing .xm-scenefx-ripple{animation-duration:4.5s}
+.xm-scenefx.motion-reduced .xm-scenefx-ripple,.xm-scenefx.motion-off .xm-scenefx-ripple{display:none}
+@keyframes xm-fx-ripple{0%{opacity:0;transform:scale(.15)}18%{opacity:.65}80%{opacity:.13}100%{opacity:0;transform:scale(1.65)}}
+.xm-scenefx-still-weather{position:absolute;inset:0;opacity:.22;background:repeating-linear-gradient(105deg,transparent 0 70px,var(--rain) 71px,transparent 72px 160px)}
+.weather-snow .xm-scenefx-still-weather{background:radial-gradient(circle at 12% 25%,var(--snow) 0 2px,transparent 3px),radial-gradient(circle at 75% 62%,var(--snow) 0 2px,transparent 3px);background-size:137px 163px,193px 227px}
+.xm-scenefx.is-paused *{animation-play-state:paused!important}
+.xm-scenefx.motion-reduced *,.xm-scenefx.motion-off *{animation:none!important}
+@keyframes xm-fx-fall{0%{opacity:0;transform:translate(0,0)}10%{opacity:.65}90%{opacity:.65}100%{opacity:0;transform:translate(var(--drift),110vh)}}
+@keyframes xm-fx-rain{0%{opacity:0;transform:translate(20px,0) rotate(12deg)}10%,85%{opacity:.55}100%{opacity:0;transform:translate(-80px,110vh) rotate(12deg)}}
+@keyframes xm-fx-petal{0%{opacity:0;transform:translate(0,0) rotate(-35deg)}12%{opacity:.75}50%{transform:translate(var(--drift),50vh) rotate(80deg)}88%{opacity:.6}100%{opacity:0;transform:translate(calc(var(--drift) * 2),110vh) rotate(220deg)}}
+@keyframes xm-fx-wind{0%{opacity:0;transform:translate(-25vw,-40px) rotate(-35deg)}20%,70%{opacity:.6}100%{opacity:0;transform:translate(100vw,100px) rotate(250deg)}}
+@keyframes xm-fx-twinkle{0%,100%{opacity:.08;transform:scale(.65)}45%{opacity:.8;transform:scale(1.2)}}
+@keyframes xm-fx-firefly{0%,100%{opacity:0;transform:translate(0,12px)}25%{opacity:.9}60%{opacity:.35;transform:translate(var(--drift),-45px)}}
+@keyframes xm-fx-meteor{0%,88%,100%{opacity:0;transform:translate(-90px,-80px) rotate(35deg)}89%{opacity:.9}95%{opacity:0;transform:translate(240px,150px) rotate(35deg)}}
+@keyframes xm-fx-watermark{0%,100%{opacity:0;transform:scale(.3)}25%{opacity:.3}70%{opacity:0;transform:scale(1.6)}}
+@keyframes xm-fx-breeze{0%,100%{opacity:0;transform:translate(-100px,0)}30%{opacity:.45}90%{opacity:0;transform:translate(200px,25px)}}
+@keyframes xm-fx-cloud{from{transform:translate(-3%,0)}to{transform:translate(7%,3%)}}
+@media(prefers-reduced-motion:reduce){.xm-scenefx *{animation:none!important}.xm-scenefx-particle{display:none}}

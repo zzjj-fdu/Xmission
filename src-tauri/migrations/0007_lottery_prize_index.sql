@@ -1,0 +1,1 @@
+ALTER TABLE lottery_draws ADD COLUMN prize_index INTEGER NOT NULL DEFAULT 0;

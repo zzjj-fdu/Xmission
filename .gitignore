@@ -1,0 +1,35 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+*.local
+.DS_Store
+
+# Credentials and personal runtime data never belong in a release.
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+*.db.bak
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.log
+*.pem
+*.key
+credentials*.json
+secrets*.json
+Xmission-backup-*.json
+Xmission-日报-*.md
+backups/
+userdata/
+
+# Local release tooling, installers and private development screenshots.
+.release-tools/
+/releases/
+docs/screenshots/
+design/scenes/source/
+__pycache__/
+*.pyc
