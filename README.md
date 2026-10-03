@@ -83,6 +83,12 @@ npm run tauri build
 
 `npm run check` 会检查 TypeScript、场景资源和应用加载相关约束。`npm run tauri build` 会生成当前平台的桌面发行构建。
 
+### macOS 测试版
+
+GitHub Actions 已配置 macOS Release 构建，可手动启动或推送 `v0.67-macos.1` 这样的 macOS 标签。构建机生成同时支持 Apple 芯片和 Intel 的 Universal DMG（macOS 11 起），验证两种架构、签名与启动后创建草稿预发布。安装包只取公开项目源码及素材，不包含开发者本地数据。详情见 [macOS 发布说明](docs/releases/0.67-macos.md)。
+
+当前采用 ad-hoc 临时签名，尚未经过 Apple Developer ID 签名和公证，也未完成真实 Mac 的完整交互验收。首次打开时系统可能阻止运行；请确认来源及系统提示。macOS 开机启动暂未提供，API 密钥保存在系统钥匙串。
+
 ## 数据与凭据
 
 任务、课程、日历与游戏化进度保存在本机应用数据库中。AI 和联网天气为可选的外部服务；启用后会按上文说明发送相应请求。不要把 API Key 提交到代码仓库、问题单或截图中。

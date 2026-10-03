@@ -148,6 +148,13 @@ pub fn run() {
             ai::ai_suggest_slot,
             ai::update_suggestion_status,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app, _event| {
+            // Finder/Dock reopens an existing macOS process without starting a second one.
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = _event {
+                startup::show_main_window(_app);
+            }
+        });
 }

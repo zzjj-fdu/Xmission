@@ -1,0 +1,108 @@
+name: macOS Release
+
+on:
+  push:
+    tags:
+      - "v*-macos*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "macOS prerelease tag"
+        required: true
+        default: "v0.67-macos.1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-release-${{ github.event.inputs.release_tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+      RELEASE_TAG: ${{ github.event.inputs.release_tag || github.ref_name }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Validate release tag
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+(-[0-9]+)?-macos\.[0-9]+$ ]]
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Use official Cargo registry on hosted runner
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          config = Path('src-tauri/.cargo/config.toml')
+          config.write_text(config.read_text().split('[source.crates-io]')[0])
+          PY
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Check frontend
+        run: npm run check
+
+      - name: Build universal macOS app and DMG
+        run: npm run tauri -- build --target universal-apple-darwin --config src-tauri/tauri.macos.conf.json -- --locked
+
+      - name: Verify bundle, architectures, signature and clean resources
+        run: |
+          APP="src-tauri/target/universal-apple-darwin/release/bundle/macos/Xmission.app"
+          lipo -verify_arch arm64 x86_64 "$APP/Contents/MacOS/xmission"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          test -z "$(find "$APP" -type f \( -iname '*.db' -o -iname '*.sqlite*' -o -iname '.env*' -o -iname '*backup*.json' \) -print)"
+          mkdir -p release-output
+          cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg release-output/
+          for image in release-output/*.dmg; do hdiutil verify "$image"; done
+          cd release-output
+          shasum -a 256 *.dmg > SHA256SUMS-macos.txt
+
+      - name: Smoke test startup with isolated empty data
+        run: |
+          XMISSION_DATA_DIR="$RUNNER_TEMP/xmission-smoke" \
+            src-tauri/target/universal-apple-darwin/release/bundle/macos/Xmission.app/Contents/MacOS/xmission > "$RUNNER_TEMP/xmission-smoke.log" 2>&1 &
+          app_pid=$!
+          sleep 8
+          if ! kill -0 "$app_pid" 2>/dev/null; then
+            cat "$RUNNER_TEMP/xmission-smoke.log"
+            exit 1
+          fi
+          test -f "$RUNNER_TEMP/xmission-smoke/xmission.db"
+          kill "$app_pid"
+
+      - name: Preserve installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xmission-macos-universal
+          path: release-output/*
+          if-no-files-found: error
+
+      - name: Upload verified macOS draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "Xmission 0.67 · macOS 测试版" --draft --prerelease --notes-file docs/releases/0.67-macos.md
+          gh release upload "$RELEASE_TAG" release-output/* --repo "$GITHUB_REPOSITORY" --clobber

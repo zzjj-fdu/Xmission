@@ -168,6 +168,7 @@ function useSavedToast() {
 }
 
 export default function SettingsPage() {
+  const supportsWindowsAutostart = typeof navigator !== 'undefined' && navigator.userAgent.includes('Windows')
   const [galleryOpen, setGalleryOpen] = useState(false)
   const sceneWeather = useSceneWeatherStore()
   const scenePhase = useSceneSession((state) => state.phase)
@@ -678,7 +679,7 @@ export default function SettingsPage() {
         <div style={{ color: colors.accent, fontFamily: font.display, fontSize: 12, marginBottom: 12 }}>启动与窗口</div>
         <p style={{ color: colors.textMuted, lineHeight: 1.7, margin: '0 0 12px' }}>主窗口右上角 × 会收起到系统托盘；悬浮窗 × 会收成小悬浮球。退出程序请使用下方按钮。</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10 }}>
-          <JrpgButton variant="ghost" onClick={() => { void toggleAutostart() }}>{autostart ? '✓ 已开启开机启动' : '开启开机启动'}</JrpgButton>
+          {supportsWindowsAutostart && <JrpgButton variant="ghost" onClick={() => { void toggleAutostart() }}>{autostart ? '✓ 已开启开机启动' : '开启开机启动'}</JrpgButton>}
           <JrpgButton variant="danger" onClick={() => { void invoke('quit_app') }}>退出 Xmission</JrpgButton>
           {startupMessage && <span role="status" style={{ fontSize: 12, color: colors.textMuted }}>{startupMessage}</span>}
         </div>

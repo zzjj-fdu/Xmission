@@ -2,6 +2,7 @@ import { StrictMode, useEffect, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { emit, listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { activeTheme } from './themes'
 import xmissionIcon from './assets/xmission-icon.png'
 
@@ -15,7 +16,11 @@ function Bubble() {
     void listen<{ key: string }>('settings-changed', ({ payload }) => {
       if (payload.key === 'theme') window.location.reload()
     }).then((fn) => { if (disposed) fn(); else unlisten = fn }).catch(console.error)
-    return () => { disposed = true; unlisten?.() }
+    let unlistenMoved: (() => void) | undefined
+    void getCurrentWindow().onMoved(({ payload }) => {
+      localStorage.setItem('xmission-bubble-position', JSON.stringify({ x: payload.x, y: payload.y }))
+    }).then((fn) => { if (disposed) fn(); else unlistenMoved = fn }).catch(console.error)
+    return () => { disposed = true; unlisten?.(); unlistenMoved?.() }
   }, [])
 
   return <button type="button" aria-label="展开 Xmission 任务栏" title="点击展开 · 拖动移动 · 右键关闭"
@@ -23,6 +28,12 @@ function Bubble() {
       if (event.button !== 0 || dragging.current) return
       event.preventDefault()
       pointerStart.current = { x: event.screenX, y: event.screenY }
+      if (!navigator.userAgent.includes('Windows')) {
+        // Native dragging follows the OS pointer directly on macOS/Linux.
+        // Windows keeps the custom drag loop to avoid Snap Assist treating the ball as a normal window.
+        void getCurrentWindow().startDragging().catch(console.error)
+        return
+      }
       dragging.current = true
       void invoke<{ moved: boolean; x: number; y: number }>('drag_bubble').then((result) => {
         if (result.moved) localStorage.setItem('xmission-bubble-position', JSON.stringify({ x: result.x, y: result.y }))
