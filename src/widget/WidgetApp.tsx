@@ -145,6 +145,28 @@ export default function WidgetApp() {
   const headerRef = useRef<HTMLDivElement>(null);
   const sizeReady = useRef(false);
   const manuallySized = useRef(false);
+  const resizeStart = useRef<{ id: number; x: number; y: number; width: number; height: number } | null>(null);
+  const pendingResize = useRef<{ width: number; height: number } | null>(null);
+  const applyingResize = useRef(false);
+
+  // macOS does not implement startResizeDragging. Coalesce native size updates
+  // while the handle retains pointer capture, including moves outside its bounds.
+  const applyManualResize = async () => {
+    if (applyingResize.current) return;
+    const win = appWindow();
+    if (!win) return;
+    applyingResize.current = true;
+    try {
+      while (pendingResize.current) {
+        const next = pendingResize.current;
+        pendingResize.current = null;
+        await win.setSize(new LogicalSize(next.width, next.height));
+      }
+    } catch (error) {
+      pendingResize.current = null;
+      console.error('[widget] 调整窗口尺寸失败', error);
+    } finally { applyingResize.current = false; }
+  };
 
   useEffect(() => {
     const win = appWindow();
@@ -579,12 +601,27 @@ export default function WidgetApp() {
         {/* 右下角 16×16 缩放手柄：无边框窗口没有原生缩放边框，需手动触发 */}
         <div
           title="拖拽调整大小"
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
             if (e.button !== 0) return;
+            e.preventDefault();
             e.stopPropagation();
             manuallySized.current = true;
+            if (/Macintosh|Mac OS X/.test(navigator.userAgent)) {
+              resizeStart.current = { id: e.pointerId, x: e.screenX, y: e.screenY, width: window.innerWidth, height: window.innerHeight };
+              e.currentTarget.setPointerCapture(e.pointerId);
+              return;
+            }
             runWindowOp('startResizeDragging', (win) => win.startResizeDragging('SouthEast'));
           }}
+          onPointerMove={(e) => {
+            const start = resizeStart.current;
+            if (!start || start.id !== e.pointerId) return;
+            pendingResize.current = { width: Math.max(280, start.width + e.screenX - start.x), height: Math.max(160, start.height + e.screenY - start.y) };
+            void applyManualResize();
+          }}
+          onPointerUp={() => { resizeStart.current = null; }}
+          onPointerCancel={() => { resizeStart.current = null; }}
+          onLostPointerCapture={() => { resizeStart.current = null; }}
           style={{
             position: 'absolute',
             right: 0,
@@ -592,6 +629,7 @@ export default function WidgetApp() {
             width: 16,
             height: 16,
             cursor: 'nwse-resize',
+            touchAction: 'none',
             zIndex: 10,
             background: `linear-gradient(135deg, transparent 50%, ${t.colors.accent} 50%)`,
             opacity: 0.8,

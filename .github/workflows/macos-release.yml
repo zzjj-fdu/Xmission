@@ -78,7 +78,7 @@ jobs:
       - name: Verify bundle, architectures, signature and clean resources
         run: |
           APP="src-tauri/target/universal-apple-darwin/release/bundle/macos/Xmission.app"
-          lipo -verify_arch arm64 x86_64 "$APP/Contents/MacOS/xmission"
+          lipo "$APP/Contents/MacOS/xmission" -verify_arch arm64 x86_64
           codesign --verify --deep --strict --verbose=2 "$APP"
           test -z "$(find "$APP" -type f \( -iname '*.db' -o -iname '*.sqlite*' -o -iname '.env*' -o -iname '*backup*.json' \) -print)"
           for image in release-output/*.dmg; do hdiutil verify "$image"; done
