@@ -4,7 +4,7 @@
 
 Xmission 是一款面向个人学习与生活的桌面日程备忘录。写下一件要做的事，AI 可以帮你整理成可检查、可修改的任务；导入课表后，可以把课程、日历和每日目标放在同一个地方查看。桌面悬浮栏让今天的安排随时可见，完成目标可获得经验和金币，再用金币兑换自己设定的奖励。
 
-当前版本 **0.67（0.67.0）**，主要支持 Windows 10/11 x64。项目仍在持续开发。
+当前版本 **0.67（0.67.0）**，支持 Windows 10/11 x64；另提供 macOS 11 起的 Universal 测试版，兼容 Apple 芯片与 Intel。项目仍在持续开发。
 
 从 [GitHub Releases](https://github.com/zzjj-fdu/xmission/releases) 下载最新版安装包，安装后即可使用手动任务、课表和专注功能；AI 服务由使用者自行配置。
 
@@ -64,7 +64,7 @@ AI 功能需要用户自行配置兼容 OpenAI API 的服务地址、模型和 A
 - Rust stable 工具链
 - Tauri 2 的平台开发依赖；Windows 需要 WebView2 Runtime
 
-本项目当前以 Windows 桌面应用为主要开发和验证目标。其他平台的打包状态尚未确认。
+本项目以 Windows 为主要交互验证平台。macOS 通用测试版已通过云端构建、双架构与签名校验、DMG 完整性及空数据启动检查，尚待真实 Mac 的完整交互验收。Linux 打包尚未验证。
 
 ## 本地运行
 
@@ -84,6 +84,8 @@ npm run tauri build
 `npm run check` 会检查 TypeScript、场景资源和应用加载相关约束。`npm run tauri build` 会生成当前平台的桌面发行构建。
 
 ### macOS 测试版
+
+**下载：[Xmission 0.67 macOS 测试版](https://github.com/zzjj-fdu/Xmission/releases/tag/v0.67-macos.1)**，选择 `Xmission_0.67.0_universal.dmg`，打开后将 Xmission 拖入 Applications 文件夹。
 
 GitHub Actions 已配置 macOS Release 构建，可手动启动或推送 `v0.67-macos.1` 这样的 macOS 标签。构建机生成同时支持 Apple 芯片和 Intel 的 Universal DMG（macOS 11 起），验证两种架构、签名与启动后创建草稿预发布。安装包只取公开项目源码及素材，不包含开发者本地数据。详情见 [macOS 发布说明](docs/releases/0.67-macos.md)。
 
