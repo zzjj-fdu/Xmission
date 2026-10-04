@@ -9,7 +9,7 @@
     "build": "tsc && vite build --configLoader runner",
     "check": "tsc --noEmit && node scripts/check-scenes.mjs && node scripts/check-loading.mjs && node scripts/check-notes.mjs",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "node scripts/tauri.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.6.0",
