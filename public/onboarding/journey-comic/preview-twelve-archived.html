@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Xmission</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#151b19;color:#f1e7d4;font-family:system-ui,"Microsoft YaHei",sans-serif}body{overflow:hidden}.picture{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#151b19}header{position:absolute;inset:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:20px 28px;background:linear-gradient(#13181388,transparent);pointer-events:none}.brand{font:20px Georgia,serif;text-shadow:0 2px 8px #000}.count{font-size:12px;color:#f1e7d4d0;text-shadow:0 1px 5px #000}nav{position:absolute;inset:auto 0 0;display:flex;justify-content:center;align-items:center;gap:14px;padding:18px;background:linear-gradient(transparent,#101713b0)}button{background:#18201acc;color:#f1e7d4;border:1px solid #c6b69155;border-radius:5px;padding:9px 18px;cursor:pointer;font:inherit;font-size:13px;min-height:40px}button:hover{background:#3b4937d9}button:focus-visible{outline:2px solid #dfbd83;outline-offset:3px}button:disabled{opacity:.35;cursor:default}.dots{display:flex;gap:7px;position:absolute;bottom:81px;left:50%;transform:translateX(-50%)}.dots button{padding:0;min-height:7px;height:7px;width:7px;border-radius:100%;background:#ece2cf88;border:0;box-shadow:0 1px 5px #0008}.dots button[aria-current=true]{background:#fff5dc;transform:scale(1.4)}.loading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:12px 20px;background:#17231ce6;border-radius:6px;font-size:14px;display:none}.loading.visible{display:block}@media(max-width:600px){header{padding:16px}nav{gap:8px;padding:12px}.dots{gap:5px;bottom:72px}button{padding:8px 13px}}
+</style></head>
+<body><img class="picture" id="picture" alt=""><header><span class="brand">Xmission</span><span class="count" id="count"></span></header><div id="loading" class="loading" role="status">图片正在展开…</div><div class="dots" id="dots" aria-label="旅行画面"></div><nav aria-label="图片叙事控制"><button id="previous">上一张</button><button id="play">暂停</button><button id="next">下一张</button></nav>
+<script>
+const frames=[
+['01-invitation','狐狸在雨后的驿站门口抬起爪子，邀请出发',3000],
+['02-spring-road','狐狸走过春日木桥，回头确认你跟上了',3300],
+['03-spring-petal','一片花瓣落在狐狸的鼻尖',2200],
+['04-summer-sunset','小船驶向落日下的海港',3300],
+['05-summer-night','同一海港入夜，灯火和星光映在海面',3300],
+['06-autumn-letter','狐狸在秋风中接住飞出邮袋的信',3000],
+['07-winter-trail','雪原上留下一行小小的脚印',3300],
+['08-winter-shake','狐狸抖掉耳尖的积雪',2200],
+['09-glass-sea','玻璃海上是白昼，海下是另一片星夜',3600],
+['10-gravity-islands','狐狸踏上悬空石阶，穿过重力不同的岛屿',3600],
+['11-world-and-home','远方还有许多世界，狐狸找到回家的邮路',4000],
+['12-return-ledger','回到熟悉的柜台，狐狸把账簿留在你面前',4000]
+];
+const picture=document.getElementById('picture'),count=document.getElementById('count'),play=document.getElementById('play'),previous=document.getElementById('previous'),next=document.getElementById('next'),loading=document.getElementById('loading');
+let index=0,playing=!matchMedia('(prefers-reduced-motion:reduce)').matches,timer,request=0;const cache=new Map();
+function image(i){if(!cache.has(i)){const img=new Image();const promise=new Promise((resolve,reject)=>{img.onload=()=>resolve(img);img.onerror=reject;});img.src=frames[i][0]+'.png';cache.set(i,promise);}return cache.get(i);}
+function controls(){count.textContent=`${index+1} / ${frames.length}`;play.textContent=playing?'暂停':index===frames.length-1?'重看':'播放';previous.disabled=index===0;next.disabled=index===frames.length-1;[...document.getElementById('dots').children].forEach((b,i)=>b.setAttribute('aria-current',String(i===index)));}
+function schedule(){clearTimeout(timer);if(playing&&index<frames.length-1)timer=setTimeout(()=>show(index+1),frames[index][2]);else if(index===frames.length-1){playing=false;controls();}}
+async function show(i){clearTimeout(timer);const current=++request;loading.classList.add('visible');try{const img=await image(i);if(current!==request)return;index=i;picture.src=img.src;picture.alt=frames[i][1];loading.classList.remove('visible');controls();schedule();if(i+1<frames.length)void image(i+1).catch(()=>{});if(i>1)cache.delete(i-2);}catch{if(current!==request)return;playing=false;loading.textContent='这张图片未加载，请切换画面或重新打开预览。';controls();}}
+function manual(i){playing=false;show(Math.max(0,Math.min(frames.length-1,i)));}
+for(let i=0;i<frames.length;i++){const b=document.createElement('button');b.setAttribute('aria-label',`第 ${i+1} 张：${frames[i][1]}`);b.onclick=()=>manual(i);document.getElementById('dots').append(b);}
+previous.onclick=()=>manual(index-1);next.onclick=()=>manual(index+1);play.onclick=()=>{if(index===frames.length-1){playing=true;show(0);}else{playing=!playing;controls();schedule();}};
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){e.preventDefault();manual(index+1);}if(e.key==='ArrowLeft'){e.preventDefault();manual(index-1);}if(e.code==='Space'&&e.target===document.body){e.preventDefault();play.click();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){playing=false;clearTimeout(timer);controls();}});window.addEventListener('pagehide',()=>clearTimeout(timer));show(0);
+</script></body></html>

@@ -63,7 +63,7 @@ export function QuestCheckbox({ checked, onToggle }: QuestCheckboxProps) {
               left: 0,
               width: '60%',
               pointerEvents: 'none',
-              background: `linear-gradient(90deg, ${t.colors.accent}00, ${t.colors.text}, ${t.colors.accent}00)`,
+              background: `linear-gradient(90deg, transparent, ${t.colors.text}, transparent)`,
             }}
           />
         )}

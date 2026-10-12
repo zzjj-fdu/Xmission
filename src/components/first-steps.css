@@ -1,0 +1,5 @@
+.xm-first-steps{width:min(520px,calc(100vw - 48px));max-height:calc(100vh - 60px);box-sizing:border-box;border:1px solid currentColor;border-radius:12px;padding:24px;line-height:1.7;overflow:auto}
+.xm-first-steps::backdrop{background:#08100e8c}.xm-first-steps header{display:flex;align-items:center;gap:12px}.xm-first-steps h2{margin:0;font-size:20px}.xm-first-steps header>button{margin-left:auto;align-self:flex-start}
+.xm-first-steps form{display:grid;gap:12px}.xm-first-steps label{display:grid;gap:5px}.xm-first-steps button{margin:5px;cursor:pointer}.xm-first-steps footer{display:flex;justify-content:space-between;border-top:1px solid currentColor;margin-top:20px;padding-top:10px}
+.xm-first-steps footer button,.xm-first-themes button,.xm-first-steps header>button{color:inherit;font:inherit;background:transparent;border:1px solid currentColor;border-radius:5px;padding:6px 10px}
+.xm-first-themes{display:flex;flex-wrap:wrap;margin:16px 0}.xm-first-themes [aria-pressed=true]{font-weight:bold;border-width:2px}

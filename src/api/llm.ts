@@ -72,6 +72,10 @@ export async function summarizeTaskForWidget(title: string, notes: string): Prom
   return invoke<string>('summarize_task_for_widget', { title, notes });
 }
 
+export async function summarizeCalendarEvent(title: string, kind: 'course' | 'task'): Promise<string> {
+  return invoke<string>('summarize_calendar_event', { title, kind });
+}
+
 /**
  * AI 课表截图识别：返回草稿供校对界面编辑（不落库）；
  * 用户确认后由 courses.saveCoursesBatch 落库。

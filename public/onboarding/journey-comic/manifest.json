@@ -1,0 +1,102 @@
+{
+  "title": "Xmission journey comic",
+  "date": "2026-10-11",
+  "frames": [
+    {
+      "order": 1,
+      "file": "01-invitation.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2415320,
+      "sha256": "bfbb3e81a905d2194dffd26c5c6626b65db044c1cd028ddea83378dde69bb882"
+    },
+    {
+      "order": 2,
+      "file": "02-spring-road.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3014222,
+      "sha256": "71fa4b4a997a77aac6ed685aa5099f2ec0890e8a01435e2d6deb7dc1fdb50f34"
+    },
+    {
+      "order": 3,
+      "file": "03-spring-petal.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2675557,
+      "sha256": "57a9941024c1678d37235072bed4482f235fbb48b48f851dae3d9a7124735882"
+    },
+    {
+      "order": 4,
+      "file": "04-summer-sunset.png",
+      "width": 1672,
+      "height": 940,
+      "bytes": 2555789,
+      "sha256": "229752fd7288939b9ca8c6eaf24a9edbf147dfe0ca56ef80e91219e1786733e1"
+    },
+    {
+      "order": 5,
+      "file": "05-summer-night.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2701011,
+      "sha256": "2955312c14ab353252f64ec7a11e750d82ff3747732b579a1c0eb23409d1fdd0"
+    },
+    {
+      "order": 6,
+      "file": "06-autumn-letter.png",
+      "width": 1672,
+      "height": 940,
+      "bytes": 2889557,
+      "sha256": "8673fc6b16b5627e7ab94b8b56e529693aefbbe1b1804dcbf25a5435b4d00941"
+    },
+    {
+      "order": 7,
+      "file": "07-winter-trail.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2775577,
+      "sha256": "e34979c239f3ec40d8413ad66c1e19ccc01488e8c89ec161f8c3c5c77a39e922"
+    },
+    {
+      "order": 8,
+      "file": "08-winter-shake.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2693262,
+      "sha256": "ea80ec6a7c28ff2a9c7acfc72f5646b0ba573df4b40f24d245b7c4bbda1673a3"
+    },
+    {
+      "order": 9,
+      "file": "09-glass-sea.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2846128,
+      "sha256": "2a2d5a80bf59a940f990ddbae495a1e30c848be9e583f2cf7482566abde1e073"
+    },
+    {
+      "order": 10,
+      "file": "10-gravity-islands.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2836220,
+      "sha256": "03b699269bab090274809abb72da52fcb0dbdf4a0d751fc6fdbfd7b7c6ac9ac3"
+    },
+    {
+      "order": 11,
+      "file": "11-world-and-home.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3026894,
+      "sha256": "6b5b69113397a04171de0eb6d9d6633ee8cce22393de21f3ad82afd874873a05"
+    },
+    {
+      "order": 12,
+      "file": "12-return-ledger.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2393932,
+      "sha256": "5cc5a731c8d0562a1c86f880be6eadf85755b84093d6007c685a953529d1f78c"
+    }
+  ]
+}

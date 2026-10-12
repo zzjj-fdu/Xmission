@@ -127,6 +127,13 @@ pub(crate) async fn start_session_db(pool: &SqlitePool, task_id: Option<String>)
     .filter(|v| (1..=180).contains(v))
     .unwrap_or(25);
 
+    let duration_min = if let Some(task) = &task_id {
+        let saved:Option<String>=sqlx::query_scalar("SELECT config_json FROM preparation_rules WHERE task_id=? AND kind='focus' AND enabled=1 AND NOT EXISTS(SELECT 1 FROM settings WHERE key='preparation_paused' AND value='true')")
+            .bind(task).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
+        saved.and_then(|s|serde_json::from_str::<crate::preparation::PreparationConfig>(&s).ok())
+            .map(|c|i64::from(c.focus_min)).filter(|m|(1..=180).contains(m)).unwrap_or(duration_min)
+    }else{duration_min};
+
     let id = Uuid::new_v4().to_string();
     sqlx::query(
         "INSERT INTO pomodoro_sessions (id, task_id, started_at, duration_min, state, remaining_secs, updated_at)
@@ -237,6 +244,7 @@ pub(crate) async fn finish_session_db(pool: &SqlitePool, completed: bool) -> Res
     if completed {
         // 契约 §2.3：完成番茄钟结算 XP 5 / 金币 2（reason="pomodoro"）
         gamification::settle_earn(&mut tx, 5, 2, "pomodoro", Some(&session.id)).await?;
+        crate::companion_memory::focused(&mut tx,&session.id,session.duration_min,(session.duration_min*60-frozen).max(0)).await?;
     }
 
     let wallet = gamification::build_wallet(&mut *tx).await?;

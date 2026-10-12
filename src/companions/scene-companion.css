@@ -1,0 +1,17 @@
+.xm-scene-companion{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.xm-scene-fox-home{position:absolute;transform:translate(-50%,-94%);transition:opacity .45s,filter .45s}
+.xm-scene-fox-home:before{content:"";position:absolute;left:18%;right:14%;bottom:1%;height:8%;border-radius:50%;background:#2c251647;filter:blur(2px)}
+.xm-scene-fox-home>button{display:block;position:relative;border:0;background:none;padding:0;cursor:pointer;pointer-events:auto;color:#fff8df;border-radius:40%;outline-offset:5px}
+.xm-scene-fox-home>button:focus-visible{outline:2px solid #fff0aa}
+.xm-scene-fox-home .xm-fox-player{filter:drop-shadow(0 1px 1px #4228186b);transition:filter .2s}
+.xm-scene-fox-home>button:hover .xm-fox-player{filter:drop-shadow(0 0 3px #fff2b1) drop-shadow(0 2px 2px #4024105a)}
+.xm-scene-fox-hint{position:absolute;bottom:100%;left:50%;transform:translate(-50%,4px);white-space:nowrap;font:11px/1.4 inherit;padding:3px 7px;border-radius:7px;background:#33291cdc;opacity:0;transition:opacity .15s,transform .15s;pointer-events:none}
+.xm-scene-fox-home>button:is(:hover,:focus-visible) .xm-scene-fox-hint{opacity:1;transform:translate(-50%,0)}
+.xm-scene-fox-home.is-leaving{opacity:0;filter:blur(3px);pointer-events:none}
+.xm-scene-companion[data-phase=night] .xm-scene-fox-home,.xm-scene-companion[data-phase=predawn] .xm-scene-fox-home{filter:brightness(.73) saturate(.8)}
+.xm-scene-companion[data-phase=sunset] .xm-scene-fox-home{filter:sepia(.16) brightness(.9)}
+.xm-scene-fox-error{position:absolute;bottom:95px;left:10px;right:10px;background:#f5e6ce;color:#813c28;border:1px solid #b88a61;font:11px/1.5 inherit;padding:8px;pointer-events:auto}
+@media(prefers-reduced-motion:reduce){.xm-scene-fox-home,.xm-scene-fox-hint{transition:none}}
+
+
+.xm-scene-fox-home.is-leaving>button{pointer-events:none}

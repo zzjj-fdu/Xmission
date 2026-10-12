@@ -1,0 +1,5 @@
+.xm-theme-long-shadow{opacity:calc(var(--island-dusk)*var(--island-direct)*.22)}
+.xm-theme-landscape.theme-parchment-journal .xm-island-fixed-plate{filter:brightness(var(--island-brightness)) saturate(calc(1 - var(--island-night)*.28))}
+.xm-theme-landscape.theme-stardew-valley .xm-island-moonlight{opacity:calc(var(--island-night)*.12)}
+.xm-theme-landscape.theme-pixel-jrpg .xm-island-moonlight{opacity:calc(var(--island-night)*.24)}
+

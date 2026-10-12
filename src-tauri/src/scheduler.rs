@@ -25,6 +25,9 @@ pub fn parse_deadline(raw: &Option<String>, _now: &DateTime<Local>) -> Option<Da
     if let Ok(ndt) = NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S") {
         return Local.from_local_datetime(&ndt).single();
     }
+    if let Ok(ndt) = NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M") {
+        return Local.from_local_datetime(&ndt).single();
+    }
     None
 }
 
@@ -187,6 +190,12 @@ pub async fn get_ranked_today(state: State<'_, SqlitePool>) -> Result<Vec<Ranked
     // M3：今日课表空档（分钟）；今日无课程 → None（中性 0.5）
     let free_gap = today_free_gap_min(state.inner(), now).await?;
     let has_class_today = free_gap.is_some();
+    let (focus,overloaded)=if crate::features::GOAL_EXPERIENCE {
+        let focus:Option<String>=sqlx::query_scalar("SELECT task_id FROM goal_preferences WHERE focused=1").fetch_optional(state.inner()).await.map_err(|e|e.to_string())?;
+        let cap:Option<String>=sqlx::query_scalar("SELECT value FROM settings WHERE key='main_quest_soft_cap'").fetch_optional(state.inner()).await.map_err(|e|e.to_string())?;
+        let overloaded=tasks.iter().filter(|t|t.form=="main_quest").count()>cap.and_then(|v|v.parse::<usize>().ok()).unwrap_or(3).clamp(1,20);
+        (focus,overloaded)
+    }else{(None,false)};
 
     // (分组, RankedTask)：① 逾期未完成 ② 今日循环日常未完成 ③ 24h 内截止
     // ④ 其余按综合分 ⑤ 已完成（循环任务今日已打卡）沉底；组内分数降序
@@ -200,7 +209,10 @@ pub async fn get_ranked_today(state: State<'_, SqlitePool>) -> Result<Vec<Ranked
         crate::recurring::fill_done_today(&mut task, today);
 
         let fit = compute_schedule_fit(task.estimated_min, free_gap);
-        let (score, mut reasons) = score_task(&task, now, fit, has_class_today);
+        let (mut score, mut reasons) = score_task(&task, now, fit, has_class_today);
+        let is_focused=focus.as_ref().is_some_and(|id|*id==task.id||task.parent_id.as_ref()==Some(id));
+        if is_focused {score+=0.5;reasons.push("聚焦主线".into());}
+        else if overloaded&&(task.form=="main_quest"||task.parent_id.is_some()) {score-=0.25;reasons.push("主线超负载，暂降低推荐顺序".into());}
 
         let deadline = parse_deadline(&task.deadline, &now);
         let overdue = deadline.is_some_and(|dl| dl < now) && task.status != "done";

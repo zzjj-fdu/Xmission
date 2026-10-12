@@ -15,6 +15,7 @@ import { RewardFloats } from './RewardFloats';
 import { Scanlines } from '../components/Scanlines';
 import { activeTheme as pixelJrpg } from '../themes';
 import { getSetting } from '../api/settings';
+import { useSceneClock } from '../hooks/useSceneClock';
 
 const t = pixelJrpg;
 const panelStyle = t.panelStyle ?? 'pixel-step';
@@ -132,6 +133,7 @@ function TitleButton({
  * - 唤回：监听主窗口广播的 widget:show 事件自行 show + 聚焦
  */
 export default function WidgetApp() {
+  useSceneClock();
   // 置顶状态：默认跟随配置 alwaysOnTop:true，可点「置顶」按钮切换
   const [pinned, setPinned] = useState(true);
   const [opacity, setOpacity] = useState(100);
@@ -366,22 +368,18 @@ export default function WidgetApp() {
       candidate.x,
       candidate.y,
     ));
-    await bubble.show();
-    await win.hide();
+    await invoke('collapse_task_widget');
   };
 
   const expandWidget = async () => {
     const win = appWindow();
     if (!win) return;
-    const bubble = await Window.getByLabel('bubble');
     const position = localStorage.getItem('xmission-widget-position');
     if (position) {
       try { const parsed = JSON.parse(position) as { x: number; y: number }; await win.setPosition(new PhysicalPosition(parsed.x, parsed.y)); }
       catch (error) { console.error('[widget] 恢复窗口位置失败', error); }
     }
-    await win.show();
-    if (bubble) await bubble.hide();
-    await win.setFocus();
+    await invoke('expand_task_widget');
   };
 
   useEffect(() => {
@@ -421,6 +419,7 @@ export default function WidgetApp() {
       {/* 单实体面板：样式按皮肤分支（像素金框 / 动森纸感 / 星露谷木框羊皮纸） */}
       <div
         className="xm-widget-frame"
+        data-texture={panelStyle}
         style={{
           position: 'relative',
           width: '100%',

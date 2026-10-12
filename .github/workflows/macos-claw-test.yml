@@ -1,0 +1,82 @@
+name: macOS OpenClaw progress test package
+
+on:
+  push:
+    branches: ['codex/macos-claw-progress-20261012']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-claw-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '13.5'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - name: Use official Cargo registry
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          config = Path('src-tauri/.cargo/config.toml')
+          config.write_text(config.read_text().split('[source.crates-io]')[0])
+          PY
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          cache-on-failure: true
+      - run: npm ci
+      - run: npm run check && npm run check:claw-setup
+      - name: Validate managed Mac runtime and process cancellation
+        run: |
+          managed_node=$(sh src-tauri/resources/claw-bootstrap.sh "$RUNNER_TEMP/claw-runtime")
+          test "$("$managed_node" --version)" = v24.16.0
+          "$managed_node" "$(dirname "$managed_node")/../lib/node_modules/npm/bin/npm-cli.js" --version
+          test "$(sh src-tauri/resources/claw-bootstrap.sh "$RUNNER_TEMP/claw-runtime")" = "$managed_node"
+          python3 - <<'PY'
+          import os, signal, subprocess
+          owner = subprocess.Popen(['/bin/sh', '-c', 'sleep 30 & wait'], start_new_session=True)
+          subprocess.run(['/bin/kill', '-KILL', '--', f'-{owner.pid}'], check=True)
+          owner.wait(timeout=5)
+          assert owner.returncode != 0
+          PY
+      - name: Build universal macOS application
+        run: npm run tauri -- build --target universal-apple-darwin --bundles app --config src-tauri/tauri.macos.conf.json -- --locked
+      - name: Verify and create DMG
+        run: |
+          APP=src-tauri/target/universal-apple-darwin/release/bundle/macos/Xmission.app
+          lipo "$APP/Contents/MacOS/xmission" -verify_arch arm64 x86_64
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          mkdir -p "$RUNNER_TEMP/xmission-dmg" release-output
+          ditto "$APP" "$RUNNER_TEMP/xmission-dmg/Xmission.app"
+          ln -s /Applications "$RUNNER_TEMP/xmission-dmg/Applications"
+          hdiutil create -volname Xmission -srcfolder "$RUNNER_TEMP/xmission-dmg" -fs HFS+ -format UDZO release-output/Xmission-claw-progress-20261012-universal.dmg
+          hdiutil verify release-output/*.dmg
+          cd release-output
+          shasum -a 256 *.dmg > SHA256SUMS.txt
+      - name: Test startup with empty application data
+        run: |
+          XMISSION_DATA_DIR="$RUNNER_TEMP/xmission-smoke" src-tauri/target/universal-apple-darwin/release/bundle/macos/Xmission.app/Contents/MacOS/xmission > "$RUNNER_TEMP/xmission-smoke.log" 2>&1 &
+          app_pid=$!
+          sleep 8
+          if ! kill -0 "$app_pid" 2>/dev/null; then cat "$RUNNER_TEMP/xmission-smoke.log"; exit 1; fi
+          test -f "$RUNNER_TEMP/xmission-smoke/xmission.db"
+          kill "$app_pid"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Xmission-claw-progress-macos-universal
+          path: release-output/*
+          if-no-files-found: error

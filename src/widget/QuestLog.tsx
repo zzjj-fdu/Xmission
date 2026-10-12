@@ -13,7 +13,7 @@ import type { RankedTask } from '../api/scheduler';
 import { listSteps, completeStep, reopenStep, onStepsChanged } from '../api/steps';
 import type { Step } from '../api/steps';
 import type { Task } from '../api/tasks';
-import { isRecurring, recurringDueToday } from '../api/tasks';
+import { isRecurring, isTaskDoneToday, recurringDueToday } from '../api/tasks';
 import { getLlmConfig, summarizeTaskForWidget } from '../api/llm';
 import { getSetting } from '../api/settings';
 import { safeNotesHtml } from '../utils/safeNotes';
@@ -61,14 +61,14 @@ function stepDone(s: Step): boolean {
 }
 
 /** 重要度徽记：像素星（替代 ◆ 字符） */
-function ImportanceBadges({ importance }: { importance: number }) {
+function ImportanceBadges({ importance, small = false }: { importance: number; small?: boolean }) {
   return (
     <span
       style={{ display: 'inline-flex', gap: 2, alignItems: 'center', whiteSpace: 'nowrap' }}
       title={`重要度 ${importance}`}
     >
       {Array.from({ length: badgeCount(importance) }, (_, i) => (
-        <PixelIcon key={i} name="star" size={16} />
+        <PixelIcon key={i} name="star" size={small ? 14 : 16} />
       ))}
     </span>
   );
@@ -257,6 +257,7 @@ function OpenRow({
   const notesHtml = useMemo(() => expanded ? safeNotesHtml(task.notes) : '', [expanded, task.notes]);
   const overdue = isOverdue(task);
   const hasSteps = task.form === 'main_quest' || task.form === 'side_quest';
+  const child = task.form === 'side_quest' && !!task.parentId;
   // 循环任务：完成 = 今日已打卡（任务永不进入永久 done）
   const recurring = isRecurring(task);
   const doneToday = recurring && task.doneToday;
@@ -327,8 +328,8 @@ function OpenRow({
           {themeMarker()}
         </span>
         {/* 语义分类图标（M4）：无分类用默认卷轴；形态改由彩色文字徽章标识 */}
-        <PixelIcon name={taskIcon(task.icon)} size={28} className="xm-widget-category" />
-        <span className="xm-widget-form"><FormBadge form={task.form} compact /></span>
+        <PixelIcon name={taskIcon(task.icon)} size={child ? 24 : 28} className="xm-widget-category" />
+        <span className="xm-widget-form"><FormBadge form={task.form} compact small={child} /></span>
         <span className="xm-widget-check"><QuestCheckbox
           checked={doneToday}
           onToggle={() =>
@@ -419,7 +420,7 @@ function OpenRow({
         >
           <PixelIcon name="hourglass" size={16} />
         </button>
-        <span className="xm-widget-importance"><ImportanceBadges importance={task.importance} /></span>
+        <span className="xm-widget-importance"><ImportanceBadges importance={task.importance} small={child} /></span>
         <ExpandArrow expanded={expanded} onClick={onToggleExpand} />
       </div>
       {/* 主线/支线：标题下的 10 段迷你进度条（完成步骤/总步骤） */}
@@ -503,6 +504,7 @@ function DoneRow({ task }: { task: Task }) {
 function ChildRowWrap({ children }: { children: ReactNode }) {
   return (
     <div
+      className="xm-widget-child-task"
       style={{
         marginLeft: 4,
         paddingLeft: 15,
@@ -555,7 +557,7 @@ export function QuestLog({ onContentChanged }: { onContentChanged?: () => void }
     if (!compact || !autoSummaryReady) return;
     let cancelled = false;
     void (async () => {
-      for (const task of tasks.filter((x) => x.status !== 'done').slice(0, 10)) {
+      for (const task of tasks.filter((x) => !isTaskDoneToday(x)).slice(0, 10)) {
         if (cancelled) return;
         if (task.title.length <= 16) continue;
         const key = JSON.stringify([task.id, task.title, task.notes]);
@@ -604,7 +606,7 @@ export function QuestLog({ onContentChanged }: { onContentChanged?: () => void }
   // 循环任务只在应做日进入今日列表（与后端 get_ranked_today 过滤口径一致）
   const { groups, orphans } = useMemo(() => {
     const open = tasks.filter(
-      (task) => task.status !== 'done' && (!isRecurring(task) || recurringDueToday(task)),
+      (task) => !isTaskDoneToday(task) && (!isRecurring(task) || recurringDueToday(task)),
     );
     let ordered: Task[];
     if (!ranked) {
@@ -618,8 +620,6 @@ export function QuestLog({ onContentChanged }: { onContentChanged?: () => void }
         if (local) {
           ordered.push(local);
           byId.delete(r.task.id);
-        } else if (r.task.status !== 'done') {
-          ordered.push(r.task);
         }
       }
       const rest = [...byId.values()].sort((a, b) => b.importance - a.importance);
@@ -655,7 +655,7 @@ export function QuestLog({ onContentChanged }: { onContentChanged?: () => void }
     };
   }, [tasks, ranked]);
 
-  const doneTasks = tasks.filter((task) => task.status === 'done');
+  const doneTasks = tasks.filter(isTaskDoneToday);
 
   if (groups.length === 0 && orphans.length === 0 && doneTasks.length === 0) {
     const theme = currentThemeKey();

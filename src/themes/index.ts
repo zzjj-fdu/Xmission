@@ -3,6 +3,7 @@ import { pixelJrpg } from './pixel-jrpg';
 import { animalCrossing } from './animal-crossing';
 import { stardewValley } from './stardew-valley';
 import { parchmentJournal } from './parchment-journal';
+import { scenePhaseAt } from '../scenes';
 
 export type ThemeKey = 'pixel-jrpg' | 'parchment-journal' | 'animal-crossing' | 'stardew-valley';
 
@@ -67,7 +68,14 @@ export function currentThemeKey(): ThemeKey {
  * 全局生效的主题 token。换肤不做运行时热切换：写 localStorage + settings 表后
  * location.reload()，模块初始化时同步选定（全项目模块顶层解构的既有模式保持不变）。
  */
-export const activeTheme: ThemeTokens = THEMES[currentThemeKey()].tokens;
+const baseTheme = THEMES[currentThemeKey()].tokens;
+// Inline styles resolve semantic colors at paint time, so lighting changes do not reload pages.
+export const activeTheme: ThemeTokens = {
+  ...baseTheme,
+  colors: Object.fromEntries(Object.entries(baseTheme.colors).map(([role, color]) =>
+    [role, `var(--xm-theme-${role}, ${color})`],
+  )) as ThemeTokens['colors'],
+};
 
 /** 输入框/备注区等内凹区域的底色：星露谷用浅羊皮纸，其余用 XP 轨道深色 */
 export function fieldBg(t: ThemeTokens = activeTheme): string {
@@ -82,6 +90,10 @@ export function fieldBg(t: ThemeTokens = activeTheme): string {
 /* ------------------------------------------------------------------ */
 try {
   const root = document.documentElement.style;
+  // Daytime semantic variables for CSS components. Night material selectors override this rule.
+  let baseTokens=document.querySelector<HTMLStyleElement>('style[data-xm-base-tokens]');
+  if(!baseTokens){baseTokens=document.createElement('style');baseTokens.dataset.xmBaseTokens='';document.head.append(baseTokens)}
+  baseTokens.textContent=':root{'+Object.entries(baseTheme.colors).map(([role,color])=>'--xm-theme-'+role+':'+color).join(';')+'}';
   const c = activeTheme.colors;
   root.setProperty('--xm-scrollbar-track', fieldBg());
   root.setProperty('--xm-scrollbar-thumb', c.goldDark);
@@ -91,6 +103,14 @@ try {
   root.setProperty('--xm-notes-border', c.goldDark);
   root.setProperty('--xm-notes-bg', fieldBg());
   document.documentElement.dataset.xmTheme = currentThemeKey();
+  if (!document.documentElement.hasAttribute('data-xm-lighting-preview')) {
+    const phase = scenePhaseAt(new Date());
+    document.documentElement.dataset.xmLighting = phase === 'night' || phase === 'predawn' ? 'night' : 'day';
+    document.documentElement.dataset.xmLightingVersion = {
+      'pixel-jrpg': 'lamp', 'parchment-journal': 'moon',
+      'animal-crossing': 'quiet', 'stardew-valley': 'quiet',
+    }[currentThemeKey()];
+  }
 
   // 像素皮肤关闭抗锯齿保持锐利；圆体皮肤开抗锯齿
   const isPixel = (activeTheme.panelStyle ?? 'pixel-step') !== 'soft';

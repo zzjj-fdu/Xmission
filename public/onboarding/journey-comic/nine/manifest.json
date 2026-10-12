@@ -1,0 +1,276 @@
+{
+  "title": "Xmission nine-scene action comic",
+  "date": "2026-10-11",
+  "frames": [
+    {
+      "order": 1,
+      "scene": "01-door",
+      "beat": 1,
+      "file": "nine/01-door-1.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2579034,
+      "sha256": "b17ffdde325e5bf2f71c06248c1ca3334d324197657e9380f7ccfc596835022a"
+    },
+    {
+      "order": 2,
+      "scene": "01-door",
+      "beat": 2,
+      "file": "nine/01-door-2.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2514412,
+      "sha256": "4939718c637ea134159ced57da348589ed566354eba6fb895a8f1d7d2d335f22"
+    },
+    {
+      "order": 3,
+      "scene": "01-door",
+      "beat": 3,
+      "file": "nine/01-door-3.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2470227,
+      "sha256": "d43648afb77ac979b3e8046404d070f12408348b65044677032552bb987397c2"
+    },
+    {
+      "order": 4,
+      "scene": "02-spring",
+      "beat": 1,
+      "file": "nine/02-spring-1.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3473868,
+      "sha256": "ab9c8d2bf7a6d525f9e5157053d2a6ceb9c56b6dc6eb6d7768e4767543c25673"
+    },
+    {
+      "order": 5,
+      "scene": "02-spring",
+      "beat": 2,
+      "file": "nine/02-spring-2.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3302448,
+      "sha256": "4e3f79bf1edce56316645019b807e39b923a59ad3f9685d89cffe5abc28fffe9"
+    },
+    {
+      "order": 6,
+      "scene": "02-spring",
+      "beat": 3,
+      "file": "nine/02-spring-3.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3202302,
+      "sha256": "2d4d9104009996eba396b27c2d08a442538a4b8823c4e37746b40695e297b2f5"
+    },
+    {
+      "order": 7,
+      "scene": "03-harbor",
+      "beat": 1,
+      "file": "nine/03-harbor-1.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2532697,
+      "sha256": "e099094de110fe8be371423bce08d0e8badcf57d21e374db131f924fa0a032a9"
+    },
+    {
+      "order": 8,
+      "scene": "03-harbor",
+      "beat": 2,
+      "file": "nine/03-harbor-2.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2517110,
+      "sha256": "df123fc93474adec824cb7bda998b344d0740f3ad530f4dba9e5971c246274ec"
+    },
+    {
+      "order": 9,
+      "scene": "03-harbor",
+      "beat": 3,
+      "file": "nine/03-harbor-3.png",
+      "width": 1671,
+      "height": 941,
+      "bytes": 2456240,
+      "sha256": "b4ae56efaad37e14e24111a0d814082a35a5cd5cc26380e431c82fadf6b09a0e"
+    },
+    {
+      "order": 10,
+      "scene": "04-autumn",
+      "beat": 1,
+      "file": "nine/04-autumn-1.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2703013,
+      "sha256": "378cecb4babcf4abaa52fbfc0e1e590c52bd5eac47e5f612477c625343dddb07"
+    },
+    {
+      "order": 11,
+      "scene": "04-autumn",
+      "beat": 2,
+      "file": "nine/04-autumn-2.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2566406,
+      "sha256": "4956539e7363ac3251ee38409dd609e237254b475b3625ed9db17f88ac52e426"
+    },
+    {
+      "order": 12,
+      "scene": "04-autumn",
+      "beat": 3,
+      "file": "nine/04-autumn-3.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2569934,
+      "sha256": "b600977e75c72ef6e6438238efa84937fb93661121cb89675dff42ad2780bb32"
+    },
+    {
+      "order": 13,
+      "scene": "05-winter",
+      "beat": 1,
+      "file": "nine/05-winter-1.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2824790,
+      "sha256": "8e3098036ec8cf3cfcd5755d4795f289289f0889e344b7a92e75b4cb26c2b971"
+    },
+    {
+      "order": 14,
+      "scene": "05-winter",
+      "beat": 2,
+      "file": "nine/05-winter-2.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2760383,
+      "sha256": "81649378f309e6b8f6636cce0dc3fb9409714e7f8082a7aca00e7658c783f191"
+    },
+    {
+      "order": 15,
+      "scene": "05-winter",
+      "beat": 3,
+      "file": "nine/05-winter-3.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2789873,
+      "sha256": "57eff04eb93c33eff141ddf5052816257ff1adea19374f33e74968f365a729c2"
+    },
+    {
+      "order": 16,
+      "scene": "06-glass-sea",
+      "beat": 1,
+      "file": "nine/06-glass-sea-1.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2661249,
+      "sha256": "97954feee87974de6390efef52ff35ec4d227742c17727d1a2fc43b3a7afbf5b"
+    },
+    {
+      "order": 17,
+      "scene": "06-glass-sea",
+      "beat": 2,
+      "file": "nine/06-glass-sea-2.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2567800,
+      "sha256": "cc8c6ba056162957c0b2e21de6ecfc066fc5aca7c7d3c31222b566210a9037b7"
+    },
+    {
+      "order": 18,
+      "scene": "06-glass-sea",
+      "beat": 3,
+      "file": "nine/06-glass-sea-3.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2514510,
+      "sha256": "2ded5f9a5beef57457ec94e87f1a58055495a23cdce8a3fab515b4d072a379c8"
+    },
+    {
+      "order": 19,
+      "scene": "07-gravity",
+      "beat": 1,
+      "file": "nine/07-gravity-1.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3165373,
+      "sha256": "e7225712afa516811140ff3888e2f9f1fc4660835174de8cb91939916de90fe2"
+    },
+    {
+      "order": 20,
+      "scene": "07-gravity",
+      "beat": 2,
+      "file": "nine/07-gravity-2.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3054935,
+      "sha256": "48238195d548e03498ed3becf316c7130dbc16a6d5e59c1c5b71a032012b64a1"
+    },
+    {
+      "order": 21,
+      "scene": "07-gravity",
+      "beat": 3,
+      "file": "nine/07-gravity-3.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3015018,
+      "sha256": "d30ef19e7307eb36ed54971286e59c553060cde6b8ef941dfa99c7be30d0fc99"
+    },
+    {
+      "order": 22,
+      "scene": "08-world",
+      "beat": 1,
+      "file": "nine/08-world-1.png",
+      "width": 1672,
+      "height": 940,
+      "bytes": 3001867,
+      "sha256": "ed042950105b696703b3cdbfb85999fd47f9b651a902ced0e15fbef56a35eb65"
+    },
+    {
+      "order": 23,
+      "scene": "08-world",
+      "beat": 2,
+      "file": "nine/08-world-2.png",
+      "width": 1673,
+      "height": 940,
+      "bytes": 2778205,
+      "sha256": "9632ad0a8e8d77b39f5af8f495a047f9c61cd213fab914cc23901db9e75c9a22"
+    },
+    {
+      "order": 24,
+      "scene": "08-world",
+      "beat": 3,
+      "file": "nine/08-world-3.png",
+      "width": 1673,
+      "height": 940,
+      "bytes": 2641636,
+      "sha256": "17dd12bdfe759e67529b80e8ea8e1f3918b626d04ea9ba0371609f541bedcce4"
+    },
+    {
+      "order": 25,
+      "scene": "09-ledger",
+      "beat": 1,
+      "file": "nine/09-ledger-1.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2350854,
+      "sha256": "275e12bd448bef83ad99fbaefd38168379e0a9cebc71e321a541a81c1f43a5b8"
+    },
+    {
+      "order": 26,
+      "scene": "09-ledger",
+      "beat": 2,
+      "file": "nine/09-ledger-2.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2373929,
+      "sha256": "0d73d986f000c3bb916cff4a5854bcb61109665e9cc162b77827aa0255c3ab87"
+    },
+    {
+      "order": 27,
+      "scene": "09-ledger",
+      "beat": 3,
+      "file": "nine/09-ledger-3.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2365510,
+      "sha256": "9fe8d184674730cc793d31d8efdb5e433497abe27f66933eb359fb665479b427"
+    }
+  ]
+}

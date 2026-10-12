@@ -11,6 +11,9 @@ import { SCENE_PHASES, SCENE_PHASE_LABELS, scenePreviewUrl } from '../scenes'
 import { useSceneSession } from '../store/sceneSession'
 import { getLlmConfig, setLlmConfig, testLlmConnection, listLlmModels } from '../api/llm'
 import type { LlmModelInfo } from '../api/llm'
+import {CompanionPreferences} from '../companions/CompanionPreferences'
+import {CompanionPicker} from '../companions/CompanionPicker'
+import { AgentConnectionPanel } from '../components/AgentConnectionPanel'
 import { QuestPanel } from '../components/QuestPanel'
 import { PixelIcon } from '../components/PixelIcon'
 import { PixelInput } from '../components/PixelInput'
@@ -63,7 +66,6 @@ function applyTheme(key: ThemeKey) {
     .catch((err: unknown) => console.error('[settings] 保存主题设置失败', err))
     .finally(() => {
       // Theme refresh keeps the open session's lighting until the next real reopen.
-      sessionStorage.setItem('xmission-scene-theme-refresh', useSceneSession.getState().openedAt.toISOString())
       window.location.reload()
     })
 }
@@ -182,6 +184,7 @@ export default function SettingsPage() {
   const [widgetOpacity, setWidgetOpacity] = useState('100')
   const [edgeHide, setEdgeHide] = useState('false')
   const [widgetAiSummary, setWidgetAiSummary] = useState('true')
+  const [calendarAiSummary, setCalendarAiSummary] = useState('true')
   const [loaded, setLoaded] = useState(false)
   const { saved, flash } = useSavedToast()
   const [exportBusy, setExportBusy] = useState(false)
@@ -246,14 +249,16 @@ export default function SettingsPage() {
       getSetting('widget_opacity'),
       getSetting('widget_edge_hide'),
       getSetting('widget_ai_summary'),
+      getSetting('calendar_ai_summary'),
     ])
-      .then(([cap, work, rest, alpha, hide, summary]) => {
+      .then(([cap, work, rest, alpha, hide, summary, calendarSummary]) => {
         if (cap != null) setSoftCap(cap)
         if (work != null) setWorkMin(work)
         if (rest != null) setBreakMin(rest)
         if (alpha != null) setWidgetOpacity(alpha)
         if (hide != null) setEdgeHide(hide)
         if (summary != null) setWidgetAiSummary(summary)
+        if (calendarSummary != null) setCalendarAiSummary(calendarSummary)
         setLoaded(true)
       })
       .catch((err: unknown) => {
@@ -360,6 +365,10 @@ export default function SettingsPage() {
 
   return (
     <div style={{ width: '100%' }}>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginBottom: 16 }}>
+        <button onClick={() => window.dispatchEvent(new CustomEvent('onboarding:open'))}>重看开场与教学</button>
+        <button onClick={() => window.dispatchEvent(new CustomEvent('onboarding:open', { detail: 'claw' }))}>配置 OpenClaw 与 QQ</button>
+      </div>
       <h1
         style={{
           display: 'flex',
@@ -395,8 +404,13 @@ export default function SettingsPage() {
         </div>
       </QuestPanel>
       <QuestPanel>
+        <div style={{color:colors.accent,fontFamily:font.display,marginBottom:12}}>桌面伙伴 · 选择宠物</div>
+        <CompanionPicker/>
+        <details style={{marginTop:12}}><summary style={{cursor:'pointer',color:colors.accent}}>陪伴与桌面设置</summary><CompanionPreferences compact showPicker={false}/></details>
+      </QuestPanel>
+      <QuestPanel>
         <div style={{ color: colors.accent, fontFamily: font.display, fontSize: 12, marginBottom: 12 }}>风景与天气</div>
-        <p style={{ color: colors.textMuted, fontSize: 12, lineHeight: 1.7, margin: '0 0 12px' }}>每套风景都有晨曦、早上、正午、夕阳、灯火夜晚、凌晨六个时段。关闭主窗口后再次打开，才按电脑当地时间更新；打开期间保持当前时段。当前：{SCENE_PHASE_LABELS[scenePhase]}。</p>
+        <p style={{ color: colors.textMuted, fontSize: 12, lineHeight: 1.7, margin: '0 0 12px' }}>选择城市后，风景跟随城市时区与当天日出、日落；未选择时使用电脑时间。四套主题在晨间、落日、亮灯时播放约 8 秒的风景过场，输入或拖动时等一等，也可以跳过。切换到下雪时，会用约 9 秒的暴雪过场进入完整冬景，再恢复轻柔小雪。后台安静更新，减少动态效果时直接切换。当前：{SCENE_PHASE_LABELS[scenePhase]}。</p>
         <div className="xm-weather-controls">
           <label style={labelStyle}>天气来源
             <PixelSelect value={sceneWeather.mode} onChange={(event) => sceneWeather.setMode(event.target.value === 'live' ? 'live' : 'manual')}>
@@ -422,7 +436,7 @@ export default function SettingsPage() {
             </PixelSelect>
           </label>
         </div>
-        <p className="xm-weather-status">JRPG 的星光与流星、手账的纸尘与水痕、小岛的花瓣与柔和雨滴、农场的萤火虫与落叶各自呈现。系统开启减少动态效果时也会自动减少动画。</p>
+        <p className="xm-weather-status">天气强度缓慢变化，重新打开不会突然重新抽取。联网天气同时影响云量、雨量和风向；各主题的屋檐滴水、水面涟漪与灯火附着在对应位置。系统减少动态效果时也会减少动画。</p>
         <details className="xm-scene-gallery" onToggle={(event) => setGalleryOpen(event.currentTarget.open)}>
           <summary>浏览当前主题的六个时段</summary>
           {galleryOpen && <div>{SCENE_PHASES.map((phase) => <figure key={phase}><img src={scenePreviewUrl(currentThemeKey(), phase)} loading="lazy" decoding="async" width={640} height={240} alt={`${SCENE_PHASE_LABELS[phase]}风景`} /><figcaption>{SCENE_PHASE_LABELS[phase]}</figcaption></figure>)}</div>}
@@ -480,6 +494,16 @@ export default function SettingsPage() {
             <PixelSelect value={widgetAiSummary} onChange={(e) => {
               setWidgetAiSummary(e.target.value)
               save('widget_ai_summary', e.target.value)
+            }}>
+              <option value="true">开启（配置 API 后自动生效）</option>
+              <option value="false">关闭</option>
+            </PixelSelect>
+          </label>
+          <label style={labelStyle}>
+            日历自动概括长标题
+            <PixelSelect value={calendarAiSummary} onChange={(e) => {
+              setCalendarAiSummary(e.target.value)
+              save('calendar_ai_summary', e.target.value)
             }}>
               <option value="true">开启（配置 API 后自动生效）</option>
               <option value="false">关闭</option>
@@ -675,6 +699,7 @@ export default function SettingsPage() {
           </>
         )}
       </QuestPanel>
+      <AgentConnectionPanel />
       <QuestPanel>
         <div style={{ color: colors.accent, fontFamily: font.display, fontSize: 12, marginBottom: 12 }}>启动与窗口</div>
         <p style={{ color: colors.textMuted, lineHeight: 1.7, margin: '0 0 12px' }}>主窗口右上角 × 会收起到系统托盘；悬浮窗 × 会收成小悬浮球。退出程序请使用下方按钮。</p>

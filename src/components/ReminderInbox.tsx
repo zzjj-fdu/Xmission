@@ -1,0 +1,20 @@
+import { useEffect, useRef, useState } from 'react'
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
+import { openOriginalTask } from '../api/planning'
+import { setSetting, getSetting } from '../api/settings'
+import { JrpgButton } from './JrpgButton'
+import { QuestPanel } from './QuestPanel'
+import { PixelInput } from './PixelInput'
+import './goal-workbench.css'
+interface ReminderState { pending: { key: string; id: string; kind: string; title: string; detail: string }[]; enabled: boolean; quiet: boolean; petVisible: boolean; heartbeat: string | null; lastDeliveredAt: number | null; boundary: string }
+export function ReminderInbox({ settings = false }: { settings?: boolean }) {
+  const [data, setData] = useState<ReminderState | null>(null), [error, setError] = useState(''), [test, setTest] = useState(''), [budget, setBudget] = useState('180'), [busy, setBusy] = useState(false)
+  const generation = useRef(0)
+  useEffect(() => { let alive = true; const refresh = () => { const version = ++generation.current; void invoke<ReminderState>('get_reminder_inbox').then(result => { if (alive && version === generation.current) setData(result) }).catch(e => { if (alive) setError(String(e)) }) }; refresh(); const timer = window.setInterval(refresh, 30000); const events = ['reminders-changed', 'tasks-changed', 'steps-changed', 'settings-changed', 'backup-restored'].map(e => listen(e, refresh)); if (settings) void getSetting('daily_capacity_min').then(v => { if (alive && v) setBudget(v) }).catch(e => setError(String(e))); return () => { alive = false; clearInterval(timer); for (const e of events) void e.then(fn => fn()).catch(() => {}) } }, [settings])
+  const pending = data?.pending ?? []
+  const acknowledge = async (key: string) => { setBusy(true); setError(''); try { await invoke('acknowledge_reminder', { key }); setData(await invoke<ReminderState>('get_reminder_inbox')) } catch (e) { setError(String(e)) } finally { setBusy(false) } }
+  if (!settings && !pending.length) return null
+  const content = <section className="xm-goal-workbench" aria-label={settings ? '提醒检查与每日容量' : '待查看提醒'}><h2>{settings ? '提醒与每日容量' : '待查看提醒'}</h2>{settings && <><p>{data?.boundary}</p><p>提醒{data?.enabled ? '开启' : '关闭'} · {data?.quiet ? '处于安静时段' : '当前允许提醒'} · {data?.petVisible ? '伙伴提醒可用' : '伙伴已收起，仍可在主窗口查看列表'}</p><p>最近后台检查：{data?.heartbeat ? new Date(Number(data.heartbeat)).toLocaleString() : '暂无记录'} · 最近展示 / 已读：{data?.lastDeliveredAt ? new Date(data.lastDeliveredAt).toLocaleString() : '暂无记录'}</p><JrpgButton disabled={busy} variant="ghost" onClick={() => { setBusy(true); setError(''); void invoke('show_companion_bubble', { kind: 'reminder-test' }).then(() => setTest('测试纸条已交给伙伴窗口。请核对桌面展示；这次不会创建任务或修改提醒回执。')).catch(e => setError(String(e))).finally(() => setBusy(false)) }}>显示测试提醒</JrpgButton><form className="xm-simple-capture" onSubmit={e => { e.preventDefault(); setBusy(true); setError(''); const minutes = Number(budget); if (!Number.isInteger(minutes) || minutes < 30 || minutes > 720) { setError('每日容量请填 30–720 分钟'); setBusy(false); return } void setSetting('daily_capacity_min', String(minutes)).then(() => setTest('每日容量已保存，下一次重新排程会使用这个值。')).catch(e => setError(String(e))).finally(() => setBusy(false)) }}><label>一天可投入的分钟数<PixelInput aria-label="每日安排容量" type="number" min="30" max="720" value={budget} onChange={e => setBudget(e.target.value)} /></label><JrpgButton type="submit" disabled={busy}>保存每日容量</JrpgButton></form>{test && <p role="status">{test}</p>}</>}{error && <p role="alert">{error}</p>}{pending.length > 0 && <ul className="xm-action-list">{pending.map(item => <li key={item.key}><div><strong>{item.title}</strong><small>{item.detail}</small></div>{['task', 'step'].includes(item.kind) && <JrpgButton variant="ghost" onClick={() => openOriginalTask(item.id)}>打开原任务</JrpgButton>}<JrpgButton disabled={busy} variant="ghost" onClick={() => void acknowledge(item.key)}>已看过</JrpgButton></li>)}</ul>}</section>
+  return settings ? <QuestPanel>{content}</QuestPanel> : <details className="xm-reminder-inbox"><summary>有 {pending.length} 条待查看提醒</summary>{content}</details>
+}

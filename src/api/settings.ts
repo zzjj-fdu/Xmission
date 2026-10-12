@@ -34,7 +34,10 @@ export async function setSetting(key: string, value: string): Promise<void> {
 }
 
 if (isTauri()) {
-  const subscription = listen<{ key: string; value: string }>('settings-changed', ({ payload }) => updateCache(payload.key, payload.value));
+  const subscription = listen<{ key: string; value: string } | null>('settings-changed', ({ payload }) => {
+    if (payload) updateCache(payload.key, payload.value);
+    else { revision++; snapshot = undefined; pending = undefined; }
+  });
   void subscription.catch(console.error);
   import.meta.hot?.dispose(() => { void subscription.then((unlisten) => unlisten()); });
 }

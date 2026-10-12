@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
 import {
   onPomodoroChanged,
   pomodoroCurrent,
@@ -10,6 +11,7 @@ import {
 import type { PomodoroSession } from '../api/pomodoro';
 
 interface PomodoroState {
+  environmentError: string;
   session: PomodoroSession | null;
   refresh: () => Promise<void>;
   start: (taskId?: string | null) => Promise<void>;
@@ -19,6 +21,7 @@ interface PomodoroState {
 }
 
 export const usePomodoroStore = create<PomodoroState>((set) => ({
+  environmentError: '',
   session: null,
 
   refresh: async () => {
@@ -29,6 +32,9 @@ export const usePomodoroStore = create<PomodoroState>((set) => ({
   start: async (taskId) => {
     const session = await pomodoroStart(taskId ?? null);
     set({ session });
+    await invoke<{ warnings: string[] }>('start_focus_environment', { sessionId: session.id })
+      .then(result => set({ environmentError: result.warnings.join('；') }))
+      .catch(e => set({ environmentError: String(e) }));
   },
 
   pause: async () => {

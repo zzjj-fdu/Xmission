@@ -48,6 +48,10 @@ pub async fn set_setting(
 
 fn validate_generic_setting(key: &str, value: &str) -> Result<(), String> {
     if key.trim().is_empty() { return Err("设置项 key 不能为空".into()); }
+    if key.starts_with("companion_") { return Err("请使用伙伴专用入口修改伙伴设置".into()); }
+    if key.starts_with("agent_") { return Err("请使用本地 Claw 接管入口修改连接设置".into()); }
+    if key.starts_with("claw_") { return Err("请使用书记配置入口修改连接设置".into()); }
+    if key.starts_with("inn_first_task:"){return Err("请使用首次任务入口修改入门任务记录".into());}
     if matches!(key, "llm_base_url" | "llm_model" | "llm_api_key" | "lottery_config") {
         return Err("请使用 AI 或抽奖专用配置入口保存此设置".into());
     }
@@ -55,6 +59,7 @@ fn validate_generic_setting(key: &str, value: &str) -> Result<(), String> {
         && !value.parse::<i64>().is_ok_and(|n| (1..=180).contains(&n)) {
         return Err("专注和休息时长必须为 1–180 分钟".into());
     }
+    if key=="daily_capacity_min" && !value.parse::<i64>().is_ok_and(|n|(30..=720).contains(&n)){return Err("每日容量必须为 30–720 分钟".into());}
     Ok(())
 }
 
@@ -64,6 +69,9 @@ mod tests {
     #[test]
     fn generic_settings_cannot_bypass_protected_configuration() {
         for key in ["llm_base_url", "llm_model", "llm_api_key", "lottery_config"] {
+            assert!(validate_generic_setting(key, "anything").is_err());
+        }
+        for key in ["agent_enabled", "agent_port", "agent_access_token"] {
             assert!(validate_generic_setting(key, "anything").is_err());
         }
         assert!(validate_generic_setting("theme", "stardew-valley").is_ok());

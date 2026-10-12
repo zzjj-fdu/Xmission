@@ -1,0 +1,360 @@
+/* Approved material lighting: JRPG A, journal B, island C, farm C. */
+html[data-xm-lighting] .xm-scene { background-position: var(--scene-landmark, 22%) center; }
+html[data-xm-theme="animal-crossing"] { --scene-landmark: 23%; }
+html[data-xm-theme="stardew-valley"] { --scene-landmark: 19%; }
+html[data-xm-lighting]:not([data-xm-lighting="original"]) [data-texture],
+html[data-xm-lighting]:not([data-xm-lighting="original"]) .xm-nav { isolation: isolate; }
+html[data-xm-lighting]:not([data-xm-lighting="original"]) [data-texture]::before,
+html[data-xm-lighting]:not([data-xm-lighting="original"]) .xm-nav::before {
+  content: ''; position: absolute; inset: 1px; border-radius: inherit;
+  background: var(--material-surface-light, none); z-index: -1; pointer-events: none;
+}
+html[data-xm-lighting]:not([data-xm-lighting="original"]) [data-texture]::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  box-shadow: var(--material-edge-light, none); z-index: 2; pointer-events: none;
+}
+html[data-xm-lighting="night"] .xm-nav { position: relative; box-shadow: var(--nav-cast-shadow) !important; }
+html[data-xm-lighting="night"] .xm-main { box-shadow: var(--main-cast-shadow) !important; }
+html[data-xm-lighting="night"] [data-texture] { box-shadow: var(--material-cast-shadow) !important; }
+html[data-xm-lighting="night"] .xm-window-titlebar {
+  background: var(--night-header); color: var(--night-header-ink);
+  border-color: var(--night-edge); box-shadow: inset 0 1px var(--night-header-rim);
+}
+html[data-xm-lighting="night"] .xm-page-kicker {
+  background: var(--night-header); color: var(--night-header-ink);
+  border-color: var(--night-edge); box-shadow: inset 0 1px var(--night-header-rim);
+}
+html[data-xm-lighting="night"] .xm-scene-divider {
+  background: var(--night-edge); box-shadow: -1px 0 0 var(--night-header-rim), 3px 0 14px #10223b66;
+}
+html[data-xm-lighting="night"] .xm-nav-item.is-active {
+  background: var(--night-selected) !important; border-color: var(--night-selected-edge) !important;
+  box-shadow: var(--night-selected-shadow) !important;
+}
+html[data-xm-lighting="night"] .xm-main > div { position: relative; }
+/* A shared light enters from the scenery-facing edge; it never veils the text. */
+html[data-xm-lighting="night"] .xm-main::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 22px;
+  background: var(--scenery-spill); pointer-events: none; z-index: 3;
+}
+html[data-xm-lighting="night"] .xm-task-row-form img {
+  filter: var(--ornament-response, none);
+}
+
+/* JRPG: cobalt enamel, discrete metallic bevels and an emissive selected slot. */
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="day"] {
+  --xm-main-surface: #102857; --xm-header-surface: #17366a;
+  --material-surface-light: linear-gradient(135deg, #70a9f93b 0%, #2b73c017 28%, transparent 60%);
+  --material-edge-light: inset 2px 2px #ffdf8999, inset -2px -2px #08152da8;
+}
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="day"] [data-texture="pixel-step"],
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="day"] .xm-nav { background: #123469 !important; }
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="day"] .xm-nav-item.is-active { background: #245197 !important; }
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="night"] {
+  --xm-main-surface: #09152f; --night-header: #0e1b37; --night-header-ink: #a8d5f1;
+  --night-edge: #5d543a; --night-header-rim: #aa947359;
+  --material-surface-light: linear-gradient(145deg, #6aa6e527 0%, transparent 31%, transparent 68%, #030b1e64 100%);
+  --material-edge-light: inset 2px 0 #dcc17b99, inset 0 2px #7ca4d04f, inset -2px 0 #050c2477, inset 0 -2px #03081abf;
+  --material-cast-shadow: inset 0 0 0 2px #2b4166, 3px 4px 0 #020719, -1px 0 0 #d0b56a66, 10px 12px 24px #03081788;
+  --nav-cast-shadow: inset 1px 0 #e3bf7840, 3px 0 0 #070e23, 6px 0 18px #03091e8c;
+  --main-cast-shadow: inset 3px 0 0 #617eab42, -10px 0 25px #06102ab0;
+  --night-selected: linear-gradient(90deg, #244d7b, #172b58 75%, #182444);
+  --night-selected-edge: #6fc9f0; --night-selected-shadow: inset 0 0 0 1px #163751, inset 0 2px #b5edff45, 0 0 12px #399ee057;
+  --scenery-spill: linear-gradient(90deg, #e3b66c2b, #70a7da10 30%, transparent);
+  --ornament-response: drop-shadow(-1px -1px 0 #8fbada33);
+}
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="night"] [data-texture="pixel-step"],
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="night"] .xm-nav { background: #101c3a !important; border-color: #8a7951 !important; }
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="night"] .xm-nav-item.is-active { color: #d0eeff !important; text-shadow: 0 0 7px #58b4eac7; }
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="night"] .xm-main button {
+  box-shadow: inset 0 1px #ffdf8666, inset -1px -2px #07162d80;
+}
+
+/* Journal: warm fibres remain visible, the unlit edge has actual page thickness. */
+html[data-xm-theme="parchment-journal"][data-xm-lighting="day"] {
+  --material-surface-light: linear-gradient(118deg, #fff9de5e, transparent 38%, transparent 73%, #74512a15);
+  --material-edge-light: inset 1px 1px #ffffdd99, inset -1px -2px #a07c4f45;
+}
+html[data-xm-theme="parchment-journal"][data-xm-lighting="night"] {
+  --xm-main-surface: linear-gradient(108deg, #bfa581, #afa08a 65%, #969587);
+  --night-header: linear-gradient(100deg, #d9b887, #c7ad87 55%, #aea18b); --night-header-ink: #43382c;
+  --night-edge: #6d5036; --night-header-rim: #ffe3a255;
+  --material-surface-light: radial-gradient(ellipse at 0% 19%, #ffdf8559 0%, #ffe4ad26 24%, transparent 57%), linear-gradient(90deg, transparent 50%, #41352e12 78%, #2526372b 100%);
+  --material-edge-light: inset 3px 0 #ffe2a799, inset 0 2px #f5d99c80, inset -4px 0 #68524538, inset 0 -3px #6a452333;
+  --material-cast-shadow: 1px 2px 0 #bea17b, 3px 4px 0 #866d4e, 5px 6px 0 #d0b285, 7px 8px 0 #68533e, 15px 17px 28px #19243750, -5px 0 23px #efa84b1a;
+  --nav-cast-shadow: inset 2px 0 #ffe4ae8c, inset -10px 0 16px #2e354227, 4px 0 16px #121c3859;
+  --main-cast-shadow: inset 2px 0 #ffe1a27c, -7px 0 0 #4b4a4559, -15px 0 25px #13213878;
+  --night-selected: linear-gradient(105deg, #f8d99e, #e6c89b 70%, #d6bd9a);
+  --night-selected-edge: #ac7540; --night-selected-shadow: inset 1px 1px #ffeccc, inset -2px -2px #94714b44, 2px 4px 5px #2b2d3733;
+  --scenery-spill: linear-gradient(90deg, #ffcf762e, transparent);
+  --ornament-response: sepia(.09) drop-shadow(-1px 0 1px #edb45222);
+}
+html[data-xm-theme="parchment-journal"][data-xm-lighting="night"] .xm-main button { box-shadow: inset 1px 1px #ffe4b06b, inset -1px -2px #67534440; }
+html[data-xm-theme="parchment-journal"][data-xm-lighting="night"] .xm-nav-item { color: #675544 !important; }
+html[data-xm-theme="parchment-journal"][data-xm-lighting="night"] .xm-nav-item.is-active { color: #734723 !important; }
+html[data-xm-theme="parchment-journal"][data-xm-lighting="night"] .xm-main h1 { color: #58422f !important; }
+
+/* Island: soft ivory under a house lamp, cool exterior shadow and warm stickers. */
+html[data-xm-theme="animal-crossing"][data-xm-lighting="day"] {
+  --material-surface-light: radial-gradient(ellipse at 10% 0%, #fffffb80, transparent 70%);
+  --material-edge-light: inset 1px 2px #ffffffe6, inset -1px -2px #cbc6aa21;
+}
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"] {
+  --xm-main-surface: linear-gradient(108deg, #e4decb, #cad3cb 42%, #b8c8c9);
+  --night-header: linear-gradient(100deg, #e9d9b8, #d4d8c7 55%, #c3ceca); --night-header-ink: #577142;
+  --night-edge: #afab96; --night-header-rim: #fff4d5ba;
+  --material-surface-light: radial-gradient(ellipse at 0% 26%, #ffda9752, transparent 49%), linear-gradient(100deg, transparent 55%, #657dab0d 82%, #38487519);
+  --material-edge-light: inset 3px 2px #fff4d1cc, inset -2px -2px #667b9b22;
+  --material-cast-shadow: inset 0 1px 0 #ffffffc4, 2px 5px 0 #b6b6a34d, 8px 14px 22px #20385b38, -5px 0 24px #eab76b20;
+  --nav-cast-shadow: inset 1px 1px #fff3d9, inset -12px 0 18px #7d91b123, 4px 0 20px #25395644;
+  --main-cast-shadow: inset 2px 0 #fff1baaa, -8px 0 26px #2540655c;
+  --night-selected: linear-gradient(110deg, #fff0ce, #eddfc0 70%, #e7dec9);
+  --night-selected-edge: #8ba865; --night-selected-shadow: inset 0 2px #fff9e1, inset 0 -2px #baa16c33, 2px 4px 7px #49688222;
+  --scenery-spill: linear-gradient(90deg, #ffc77333, #edd9b01a 28%, transparent);
+  --ornament-response: drop-shadow(-1px -1px 1px #ffe5a33b);
+}
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"] .xm-nav { background: #f2e8d4 !important; }
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"] .xm-nav-item { color: #7d7565 !important; }
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"] .xm-nav-item.is-active { color: #4f7b3d !important; }
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"] .xm-main h1 { color: #4e803e !important; }
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"] .xm-main button:not(.xm-task-quick-action) {
+  box-shadow: inset 0 2px #fff7dfaa, 0 2px 0 #afa78833;
+}
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"] .xm-main button[style*="background-color: rgb(75, 145, 56)"] {
+  background-color: #ebc48b !important; color: #4e6334 !important; border-color: #a8966b !important;
+}
+
+/* Farm: dark oak, warm cut edges and pixel-sized nicks catching farmhouse light. */
+html[data-xm-theme="stardew-valley"][data-xm-lighting="day"] {
+  --material-surface-light: linear-gradient(122deg, #fff1bc4d, transparent 47%, #75452012);
+  --material-edge-light: inset 3px 2px #fce4a27c, inset -3px -2px #8f5c293b;
+}
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"] {
+  --night-header: #30251e; --night-header-ink: #e6be7b; --night-edge: #6b492d; --night-header-rim: #d69c534d;
+  --material-surface-light: radial-gradient(ellipse at 0% 18%, #ffd37847, transparent 48%), linear-gradient(90deg, transparent 45%, #352c3120 78%, #14244030);
+  --material-edge-light: inset 4px 0 #edb66199, inset 0 3px #b07f4973, inset -5px 0 #4b332842, inset 0 -4px #6c422550;
+  --material-cast-shadow: inset 0 0 0 2px #b88747, inset -3px -3px 0 #563820, 4px 5px 0 #261b17, 7px 8px 0 #10172ac4, 11px 16px 26px #1022385c;
+  --nav-cast-shadow: inset 2px 0 #ffd17a59, inset -4px 0 #51372d55, 4px 0 0 #201d20, 8px 0 20px #111c38aa;
+  --main-cast-shadow: inset 3px 0 #d296484d, inset 6px 0 #755333, -8px 0 24px #1220388c;
+  --night-selected: linear-gradient(100deg, #efce8f, #d4b585 65%, #b99f7a);
+  --night-selected-edge: #b48345; --night-selected-shadow: inset 2px 2px #ffe6a6b3, inset -3px -3px #805b3c73, 3px 4px 0 #26304155;
+  --scenery-spill: linear-gradient(90deg, #ffbf5b3d, transparent);
+  --ornament-response: drop-shadow(-1px -1px 0 #ffc27e3b);
+}
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"] .xm-main {
+  background: linear-gradient(110deg, #e9af521d, transparent 25%, #0d1f393f 95%), linear-gradient(#211b20c9, #181b27d6), url('../assets/themes/sv_wood_tile_clean.png') 0 0 / 512px 512px !important;
+  border-color: #805736;
+}
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"] [data-texture="wood-frame"] { border-color: #775032 !important; }
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"] .xm-main button { box-shadow: inset 2px 2px #ffe1a04a, inset -2px -2px #70553f38, 2px 3px 0 #402c2622; }
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"] .xm-nav-item { color: #766044 !important; }
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"] .xm-nav-item.is-active { color: #72441f !important; }
+
+/* Twelve independent theme studies. Shared rules adapt the real components only. */
+html[data-xm-lighting="night"][data-xm-lighting-version] {
+  --study-paper-art: none;
+  --study-nav-art:var(--study-paper-art);
+  --study-ink: #322f29; --study-muted: #685f53; --study-accent: #547c43;
+  --study-info: #386378; --study-danger: #a44737;
+  --study-field: #d7cbb3; --study-field-edge: #8d8a73;
+  --study-panel: #e8d9b8; --study-panel-edge: #b8a984;
+  --study-room: #303d42; --study-nav: #cdbd9e;
+  --study-heading:#ede2bf;
+  --study-nav-ink:var(--study-ink); --study-nav-muted:var(--study-muted);
+  --study-nav-accent:var(--study-accent); --study-nav-field:var(--study-field);
+  --xm-notes-text:var(--study-ink) !important; --xm-notes-strong:var(--study-accent) !important;
+  --xm-notes-border:var(--study-field-edge) !important; --xm-notes-bg:var(--study-field) !important;
+  --xm-scrollbar-track:var(--study-room) !important; --xm-scrollbar-thumb:var(--study-field-edge) !important;
+  --xm-grid-cell:var(--study-panel) !important; --xm-grid-ghost:var(--study-field) !important;
+}
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-window,
+html[data-xm-lighting="night"][data-xm-lighting-version] [data-texture],
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-nav { color:var(--study-ink) !important; }
+html[data-xm-lighting="night"][data-xm-lighting-version] [data-lit-ink="text"] { color:var(--study-ink) !important; }
+html[data-xm-lighting="night"][data-xm-lighting-version] [data-lit-ink="textMuted"] { color:var(--study-muted) !important; }
+html[data-xm-lighting="night"][data-xm-lighting-version] [data-lit-ink="accent"] { color:var(--study-accent) !important; }
+html[data-xm-lighting="night"][data-xm-lighting-version] [data-lit-ink="info"] { color:var(--study-info) !important; }
+html[data-xm-lighting="night"][data-xm-lighting-version] [data-lit-ink="danger"] { color:var(--study-danger) !important; }
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-main h1 { color:var(--study-heading) !important; }
+html[data-xm-lighting="night"][data-xm-lighting-version] [data-lit-surface="field"] {
+  background-color:var(--study-field) !important; border-color:var(--study-field-edge) !important;
+}
+html[data-xm-lighting="night"][data-xm-lighting-version] [data-texture] {
+  background:linear-gradient(var(--study-panel-tint),var(--study-panel-tint)), var(--study-paper-art), var(--study-panel) !important;
+  border-color:var(--study-panel-edge) !important;
+}
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-nav {
+  background:linear-gradient(var(--study-nav-tint),var(--study-nav-tint)), var(--study-nav-art), var(--study-nav) !important;
+}
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-nav-item { color:var(--study-nav-muted) !important; }
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-nav-item.is-active { color:var(--study-nav-accent) !important; }
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-nav [data-lit-ink="text"] {color:var(--study-nav-ink) !important;}
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-nav [data-lit-ink="textMuted"] {color:var(--study-nav-muted) !important;}
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-nav [data-lit-ink="accent"] {color:var(--study-nav-accent) !important;}
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-nav [data-lit-surface="field"] {background-color:var(--study-nav-field) !important;}
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-main {
+  background:var(--study-room) !important;
+  --xm-text:var(--study-ink); --xm-text-muted:var(--study-muted);
+  --xm-accent:var(--study-accent); --xm-panel:var(--study-panel);
+  --xm-header-text:var(--study-ink); --xm-header-surface:var(--study-field);
+  --xm-grid-head:var(--study-field); --xm-grid-cell:var(--study-panel);
+  --xm-grid-ghost:var(--study-field);
+}
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-main :is(input,textarea,select),
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-main button:not(.xm-task-quick-action) {
+  background:var(--study-field) !important; border-color:var(--study-field-edge) !important;
+  color:var(--study-ink) !important;
+}
+html[data-xm-lighting="night"][data-xm-lighting-version] input::placeholder { color:var(--study-muted) !important; opacity:.85; }
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-task-quick-action {
+  background:transparent; border-color:var(--study-field-edge); color:var(--study-accent);
+}
+html[data-xm-lighting="night"][data-xm-lighting-version] .xm-task-quick-action.is-danger {color:var(--study-danger);border-color:color-mix(in srgb,var(--study-danger) 50%, transparent);}
+html[data-xm-theme="parchment-journal"][data-xm-lighting="night"][data-xm-lighting-version],
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"][data-xm-lighting-version] {
+  --study-paper-art:url('../assets/themes/sv_parchment_tile_clean.png');
+}
+html[data-xm-lighting="night"][data-xm-lighting-version] :is([data-texture],.xm-nav) {
+  background-size:auto,512px 512px,auto !important;
+}
+
+/* JRPG owns enamel, cut crystal, brass and etched magic. All edges stay pixel-sized. */
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="night"] {
+  --study-ink:#e6e7d9; --study-muted:#b1bed0; --study-accent:#e2d0a0;
+  --study-info:#a6d0e5; --study-danger:#edb19b; --study-heading:#e3d9b1;
+  --study-panel:#152448; --study-panel-tint:#09153832; --study-nav:#172849; --study-nav-tint:#0d173044;
+  --study-field:#213659; --study-field-edge:#697a96; --study-panel-edge:#8b99af;
+  --night-header:#182744; --night-header-ink:#bcccdf; --night-edge:#566b88; --night-header-rim:#9dbfd933;
+  --material-cast-shadow:inset 0 0 0 2px #253b5d,3px 4px 0 #050b20,8px 12px 20px #02081966;
+  --nav-cast-shadow:inset -2px 0 #050c25,3px 0 #03091c,9px 0 22px #01071d88;
+  --main-cast-shadow:inset 2px 0 #9bbbc83b,-6px 0 #040b2188,-12px 0 24px #03091e88;
+  --ornament-response:drop-shadow(-1px -1px 0 #bddcfa22);
+}
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="night"][data-xm-lighting-version="lamp"] {
+  --study-room:radial-gradient(ellipse at 0 12%,#1c3556,#0b142e 70%);
+  --study-panel:#112849; --study-nav:#15304d; --study-field:#213e59; --study-panel-edge:#6698b3;
+  --study-accent:#b9e3df; --study-heading:#d4eade;
+  --night-header:linear-gradient(90deg,#234257,#121f3d); --night-header-ink:#c0dfde; --night-edge:#598895;
+  --material-surface-light:linear-gradient(138deg,#8fe3e22b 0 5%,transparent 5% 28%,#679cc01a 28% 34%,transparent 34% 79%,#03142d44 79%),radial-gradient(ellipse at 0 10%,#76aee52b,transparent 62%);
+  --material-edge-light:inset 2px 0 #99dfde77,inset 0 2px #b6edf044,inset -2px -2px #020c27cc;
+  --night-selected:linear-gradient(90deg,#2d6380,#1d3d64); --night-selected-edge:#8ce2de;
+  --night-selected-shadow:inset 0 0 0 2px #204256,inset 0 3px #a7efef3b,0 0 0 2px #306885,0 0 18px #66c9ec40;
+  --scenery-spill:linear-gradient(90deg,#b4daea4c,#71aacf22,transparent);
+}
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="night"] .xm-nav-item.is-active {position:relative;text-shadow:none !important;}
+html[data-xm-theme="pixel-jrpg"][data-xm-lighting="night"][data-xm-lighting-version="lamp"] .xm-nav-item.is-active::after {
+  content:'';position:absolute;right:7px;top:7px;bottom:7px;width:2px;background:#97dedd;box-shadow:-4px 0 #518dac;pointer-events:none;
+}
+
+/* Journal owns pale parchment and deep ink. Night never turns paper into a dark slab. */
+html[data-xm-theme="parchment-journal"][data-xm-lighting="night"] {
+  --study-ink:#352e29; --study-muted:#6b6255; --study-accent:#4d5364; --study-info:#344b68; --study-danger:#984533;
+  --study-panel:#ecdcc0; --study-nav:#e0d1b8; --study-field:#dbcbb1; --study-field-edge:#98866e;
+  --study-panel-edge:#9c8460; --study-heading:#e7decb;
+  --night-header-rim:#ffedc33b;
+  --nav-cast-shadow:inset 2px 0 #f7e6c199,inset -9px 0 17px #47506227,5px 0 20px #18243866;
+  --main-cast-shadow:inset 2px 0 #ebd8af66,-7px 0 0 #4e4d4759,-16px 0 26px #13213877;
+  --ornament-response:drop-shadow(-1px -1px 1px #eed7a633);
+}
+html[data-xm-theme="parchment-journal"][data-xm-lighting="night"][data-xm-lighting-version="moon"] {
+  --study-room:radial-gradient(ellipse at -8% 25%,#946439,#504135 62%,#343c4a);
+  --study-panel-tint:#c68f3e62; --study-nav-tint:#b9884870; --study-field:#d8b780;
+  --study-accent:#744b20; --study-info:#4a4b54; --study-heading:#f2ddb5;
+  --night-header:linear-gradient(102deg,#af7e44,#574536 72%,#3e4144); --night-header-ink:#f5dfb8; --night-edge:#947141;
+  --material-surface-light:radial-gradient(ellipse at -12% 19%,#ffdfa5a3 0%,#f6c8774d 24%,transparent 64%),linear-gradient(90deg,transparent 56%,#45312c22 100%);
+  --material-edge-light:inset 3px 0 #ffdf97cc,inset 0 2px #eccc8f80,inset -4px 0 #6d452842,inset 0 -3px #79502d44;
+  --material-cast-shadow:1px 2px #d1ab73,3px 4px #866445,5px 6px #caa472,7px 8px #655043,15px 20px 28px #19233159,-5px 0 19px #dc953426;
+  --night-selected:linear-gradient(105deg,#f5d595,#d6b786); --night-selected-edge:#a47535;
+  --night-selected-shadow:inset 1px 1px #ffe8b8,inset -2px -2px #8a684b40,2px 3px 7px #2e303a33;
+  --scenery-spill:linear-gradient(90deg,#ffcf7b77,transparent);
+}
+html[data-xm-theme="parchment-journal"][data-xm-lighting="night"] .xm-main button:not(.xm-task-quick-action) {
+  border-radius:2px;box-shadow:inset 1px 1px #fff2d05c,inset -1px -2px #715e4140;
+}
+
+/* Island owns soft paper, passport seams, postal dots and a firefly-green cover. */
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"] {
+  --study-ink:#3b4435; --study-muted:#63715c; --study-accent:#4e753a; --study-info:#426f80; --study-danger:#a55040;
+  --study-panel:#f8edd7; --study-nav:#eee5cb; --study-field:#e4d6b9; --study-field-edge:#b7b490; --study-panel-edge:#c4bf9e;
+  --study-heading:#e6e9ce; --study-panel-tint:#f0e3c723; --study-nav-tint:#e9d9b33b;
+  --nav-cast-shadow:inset 2px 1px #fff1db9c,inset -9px 0 15px #57798a23,4px 0 17px #22395040;
+  --main-cast-shadow:inset 2px 0 #ece5b84d,-9px 0 23px #1d3b5544;
+  --night-header-rim:#fff0d67c; --ornament-response:drop-shadow(-1px -1px 1px #f6e8ae3b);
+}
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"][data-xm-lighting-version="quiet"] {
+  --study-room:radial-gradient(ellipse at 0 23%,#537758,#2e554d 73%,#284c51);
+  --study-panel:#e2e4bb; --study-panel-tint:#b5c99223; --study-nav:#87a78e; --study-nav-tint:#537e683b;
+  --study-field:#e3d395; --study-field-edge:#a8a770; --study-panel-edge:#a7b185;
+  --study-ink:#344334; --study-muted:#596b51; --study-accent:#3f6a3d; --study-info:#416c71;
+  --study-nav-ink:#f2ebcb; --study-nav-muted:#e0e5c4; --study-nav-accent:#f2ebbb; --study-nav-field:#78947b;
+  --night-header:linear-gradient(110deg,#607f59,#365c54); --night-header-ink:#e9e5bb; --night-edge:#9cab77;
+  --material-surface-light:radial-gradient(ellipse at 0 15%,#ffefb559,transparent 60%),linear-gradient(105deg,transparent 74%,#375a5514);
+  --material-edge-light:inset 2px 1px #f0ecc089,inset -2px -2px #4d755330;
+  --material-cast-shadow:inset 0 1px #f3efcba6,1px 4px 0 #71907e4d,6px 13px 25px #163c4244,-3px 0 20px #d9df8930;
+  --night-selected:linear-gradient(110deg,#6b925e,#567f60); --night-selected-edge:#c2d295;
+  --night-selected-shadow:inset 0 2px #c7d79559,0 0 12px #cfd48c30;
+  --scenery-spill:linear-gradient(90deg,#dcdd944c,transparent);
+}
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"] .xm-main button:not(.xm-task-quick-action) {
+  border-radius:18px;box-shadow:inset 0 2px #fff9e7a6,inset 0 -2px #79937721,0 2px 3px #1e4b4021;
+}
+html[data-xm-theme="animal-crossing"][data-xm-lighting="night"][data-xm-lighting-version="quiet"] [data-texture]::after {
+  background:radial-gradient(circle at 9px 9px,#f4e8a899 0 1px,transparent 3px),radial-gradient(circle at calc(100% - 9px) calc(100% - 9px),#e6e29b99 0 1px,transparent 4px);
+}
+
+/* Farm owns oak beams and pegs. Navigation is wood, never the journal's paper column. */
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"] {
+  --study-nav-art:url('../assets/themes/sv_wood_tile_clean.png');
+  --study-ink:#443125; --study-muted:#705b46; --study-accent:#624b2b; --study-info:#395c71; --study-danger:#a44533;
+  --study-panel:#e7cca0; --study-panel-tint:#bb934c38; --study-field:#d8bc85;
+  --study-panel-edge:#82613b; --study-field-edge:#967750;
+  --study-nav-ink:#eddfbc; --study-nav-muted:#d9c499; --study-nav-accent:#f1db9b; --study-nav-field:#625039;
+  --study-heading:#edd6a5; --night-header-rim:#d9b66859;
+  --nav-cast-shadow:inset 3px 0 #cd9d4f5c,inset -4px 0 #191a2288,4px 0 #241c19,8px 0 20px #071a3399;
+  --main-cast-shadow:inset 3px 0 #c8994c59,inset 6px 0 #79572d,-10px 0 27px #0f203788;
+  --ornament-response:drop-shadow(-1px -1px 0 #ffe0a326);
+}
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"][data-xm-lighting-version="quiet"] {
+  --study-room:radial-gradient(ellipse at -10% 20%,#da984026,transparent 60%),linear-gradient(#492e28bd,#242638dd),url('../assets/themes/sv_wood_tile_clean.png') 0 0 /512px;
+  --study-nav:#643d2a; --study-nav-tint:#522b20a8; --study-panel-tint:#c8a46733;
+  --study-ink:#4c3027; --study-accent:#875237; --study-info:#505974; --study-field:#ddc28a; --study-panel-edge:#96613c;
+  --study-nav-muted:#e1c5a8; --study-nav-accent:#f1d4a0; --study-nav-field:#79543e;
+  --night-header:linear-gradient(95deg,#8b5c3e,#3d3337); --night-header-ink:#f0dab7; --night-edge:#b18256;
+  --material-surface-light:radial-gradient(ellipse at 0 10%,#ffe5b064,transparent 69%),linear-gradient(100deg,transparent 73%,#67475612);
+  --material-edge-light:inset 4px 0 #e8c6979c,inset 0 3px #dbac7489,inset -4px -4px #60433438;
+  --material-cast-shadow:inset 0 0 0 2px #b68a56,3px 4px #3f2920,6px 7px #282231,11px 17px 25px #10203a5c;
+  --night-selected:linear-gradient(100deg,#b38353,#795b48); --night-selected-edge:#dab384;
+  --night-selected-shadow:inset 2px 2px #f2d3a780,inset -2px -2px #58392f88,3px 4px #29263388;
+  --scenery-spill:linear-gradient(90deg,#f3c88766,transparent);
+}
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"] [data-texture]::after {
+  background:linear-gradient(#f4d89d,#c4a875) 5px 5px/3px 3px no-repeat,linear-gradient(#716c62,#3e484f) calc(100% - 5px) 5px/3px 3px no-repeat,
+    linear-gradient(#d8b574,#9b8159) 5px calc(100% - 5px)/3px 3px no-repeat,linear-gradient(#74665a,#47414a) calc(100% - 5px) calc(100% - 5px)/3px 3px no-repeat;
+  image-rendering:pixelated;
+}
+html[data-xm-theme="stardew-valley"][data-xm-lighting="night"] .xm-main button:not(.xm-task-quick-action) {
+  border-radius:0;box-shadow:inset 2px 2px #f4daa87c,inset -2px -2px #86654b48,2px 3px 0 #26304338;
+}
+
+::view-transition-old(root),::view-transition-new(root) {animation-duration:850ms;animation-timing-function:cubic-bezier(.25,.1,.25,1);}
+@media(prefers-reduced-motion:reduce) {::view-transition-old(root),::view-transition-new(root) {animation:none;}}
+
+/* Selected night palettes resolve semantic inline tokens throughout the app. */
+html[data-xm-lighting="night"] {
+  --xm-theme-text:var(--study-ink); --xm-theme-textMuted:var(--study-muted);
+  --xm-theme-accent:var(--study-accent); --xm-theme-info:var(--study-info);
+  --xm-theme-danger:var(--study-danger); --xm-theme-panel:var(--study-panel);
+  --xm-theme-panelLight:var(--study-field); --xm-theme-xpTrack:var(--study-field);
+  --xm-theme-border:var(--study-panel-edge); --xm-theme-goldDark:var(--study-field-edge);
+}
+html[data-xm-lighting="night"] .xm-nav {
+  --xm-theme-text:var(--study-nav-ink); --xm-theme-textMuted:var(--study-nav-muted);
+  --xm-theme-accent:var(--study-nav-accent); --xm-theme-panelLight:var(--study-nav-field);
+  --xm-theme-xpTrack:var(--study-nav-field); --xm-theme-goldDark:var(--study-nav-accent);
+}
+html[data-xm-lighting="night"] :is(.xm-widget-titlebar,.xm-widget-footer) {
+  background:var(--night-header) !important; color:var(--night-header-ink) !important;
+  border-color:var(--night-edge) !important;
+}
+/* View-transition snapshots fade the scenery and its material lighting together. */
+::view-transition-old(root),::view-transition-new(root) { mix-blend-mode:normal; }

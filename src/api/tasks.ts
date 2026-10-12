@@ -78,6 +78,11 @@ export function isRecurring(task: Task): boolean {
   return task.recurrence !== 'none';
 }
 
+/** Recurring tasks stay active in storage so their next occurrence can return. */
+export function isTaskDoneToday(task: Task): boolean {
+  return task.status === 'done' || (isRecurring(task) && task.doneToday);
+}
+
 /** 今天（任务日，4:00 分界）是否为该循环任务的应做日；非循环任务恒 false */
 export function recurringDueToday(task: Task): boolean {
   if (task.recurrence === 'daily') return true;

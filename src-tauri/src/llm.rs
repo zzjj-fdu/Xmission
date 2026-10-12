@@ -42,7 +42,7 @@ fn build_ocr_prompt(periods: &[(String, String)]) -> String {
 // ---------- 配置与钥匙串 ----------
 
 fn keyring_entry() -> Result<keyring::Entry, String> {
-    keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
+    keyring::Entry::new(KEYRING_SERVICE, &crate::credentials::account(KEYRING_USER))
         .map_err(|e| format!("无法访问系统钥匙串：{e}"))
 }
 
@@ -227,7 +227,9 @@ pub(crate) async fn send_compatible(client: &reqwest::Client, base_url: &str, ke
                 } else { message.get("content").cloned().unwrap_or(Value::Null) };
                 json!({"role":message.get("role"), "content":content})
             }).collect::<Vec<_>>();
-        (base_url.to_string(), json!({"model":chat_body.get("model"), "input":input}))
+        let mut body=json!({"model":chat_body.get("model"), "input":input});
+        if let Some(max)=chat_body.get("max_tokens"){body["max_output_tokens"]=max.clone();}
+        (base_url.to_string(), body)
     } else { (format!("{base_url}/chat/completions"), chat_body) };
     client.post(url).bearer_auth(key).json(&body).send().await.map_err(map_http_err)
 }
@@ -237,7 +239,23 @@ pub(crate) async fn send_compatible(client: &reqwest::Client, base_url: &str, ke
 pub async fn summarize_task_for_widget(
     state: State<'_, SqlitePool>, title: String, notes: String,
 ) -> Result<String, String> {
-    let (base_url, model, key) = current_config(state.inner()).await?;
+    summarize_short_title(state.inner(), title, notes,
+        "你是任务栏文案编辑。把任务概括为清楚的行动短语，最多 12 个汉字或 22 个英文字母。保留具体行动和对象，不添新信息，不要引号、序号或解释。"
+    ).await
+}
+
+#[tauri::command]
+pub async fn summarize_calendar_event(
+    state: State<'_, SqlitePool>, title: String, kind: String,
+) -> Result<String, String> {
+    if !matches!(kind.as_str(), "course" | "task") { return Err("无效的日历事项类型".into()); }
+    summarize_short_title(state.inner(), title, format!("事项类型：{kind}"),
+        "你是日历文案编辑。只精简事项标题，输出最多 12 个汉字或 22 个英文字母的短标题。保留行动、对象和有区别意义的课程名称；课程不要改写成待办动作。去掉冗余修饰和课程代码。不添加日期、完成状态或原文没有的信息，不要解释、引号或序号。"
+    ).await
+}
+
+async fn summarize_short_title(pool: &SqlitePool, title: String, notes: String, instruction: &str) -> Result<String, String> {
+    let (base_url, model, key) = current_config(pool).await?;
     let key = key.ok_or_else(|| "LLM 未配置".to_string())?;
     let title = title.chars().take(240).collect::<String>();
     let notes = notes.chars().take(800).collect::<String>();
@@ -245,7 +263,7 @@ pub async fn summarize_task_for_widget(
     let resp = send_compatible(&client, &base_url, &key, json!({
             "model": model,
             "messages": [
-                {"role":"system", "content":"你是任务栏文案编辑。把任务概括为清楚的行动短语，最多 12 个汉字或 22 个英文字母。保留具体行动和对象，不添新信息，不要引号、序号或解释。"},
+                {"role":"system", "content":instruction},
                 {"role":"user", "content":format!("标题：{title}\n备注：{notes}")}
             ],
             "stream": false

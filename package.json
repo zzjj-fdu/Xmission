@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vite --configLoader runner",
     "build": "tsc && vite build --configLoader runner",
-    "check": "tsc --noEmit && node scripts/check-scenes.mjs && node scripts/check-loading.mjs && node scripts/check-notes.mjs",
+    "check": "tsc --noEmit && node scripts/check-scenes.mjs && node scripts/check-loading.mjs && node scripts/check-notes.mjs && node scripts/check-calendar.mjs && node scripts/check-interface-rollback.mjs && node scripts/check-preparation-ui.mjs && node scripts/check-onboarding.mjs && node scripts/check-claw-managed.mjs && node scripts/check-onboarding-ui.mjs && node scripts/check-onboarding-journey.mjs",
+    "check:claw-integration": "node scripts/check-claw-integration.mjs",
+    "check:claw-setup": "node scripts/check-claw-setup-ui.mjs",
     "preview": "vite preview",
     "tauri": "node scripts/tauri.mjs"
   },
@@ -20,6 +22,7 @@
     "@tiptap/starter-kit": "^2.27.2",
     "dompurify": "^3.4.16",
     "framer-motion": "^12.15.0",
+    "pixi.js": "^8.22.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^5.0.5"

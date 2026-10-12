@@ -1,0 +1,13 @@
+.xm-preparation{border:1px solid var(--xm-border,#91816a);border-radius:8px;padding:14px;margin:12px 0;color:inherit;font-size:13px;line-height:1.65}
+.xm-preparation-heading,.xm-preparation-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.xm-preparation-heading{justify-content:space-between}.xm-preparation p{margin:8px 0}.xm-preparation small{opacity:.8}
+.xm-preparation-badge{color:var(--xm-accent,#649d83);font-size:11px;flex-shrink:0}
+.xm-preparation form{display:grid;gap:12px;margin:12px 0}.xm-preparation label{display:grid;gap:5px}
+.xm-preparation-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.xm-preparation-wide{grid-column:1/-1}
+.xm-preparation textarea{width:100%;box-sizing:border-box;border:1px solid currentColor;border-radius:4px;padding:8px;color:inherit;background:transparent;font:inherit;resize:vertical}
+.xm-preparation .xm-preparation-check{display:flex;align-items:center;gap:8px}.xm-preparation-check input{width:16px;height:16px}
+.xm-preparation-scope{opacity:.85;padding:10px;border-left:2px solid currentColor}
+.xm-preparation-output{padding:12px 0;border-top:1px solid var(--xm-border,#91816a);overflow-wrap:anywhere}
+.xm-preparation-output button{font:inherit;color:inherit;background:transparent;border:1px solid currentColor;border-radius:4px;padding:5px 8px;cursor:pointer}
+.xm-preparation-error{color:var(--xm-danger,#d76868)}.xm-preparation details{margin-top:8px}.xm-preparation summary{cursor:pointer}
+.xm-preparation-reader{padding:12px;margin:10px 0;border:1px solid currentColor;border-radius:6px}.xm-preparation-reader pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.8;max-height:420px;overflow:auto}

@@ -7,19 +7,25 @@
 .xm-scenefx.weather-cloudy .xm-scenefx-tint{background:linear-gradient(#71839a30,#8d9d9f12)}
 .xm-scenefx.weather-rain .xm-scenefx-tint{background:linear-gradient(#30485d50,#47718420)}
 .xm-scenefx.weather-snow .xm-scenefx-tint{background:linear-gradient(#becfe138,#eff8ff12)}
-.xm-scenefx.weather-fog .xm-scenefx-tint{background:linear-gradient(#a1b9bd25,#d6e1df55)}
+.xm-scenefx.weather-fog .xm-scenefx-tint{background:linear-gradient(#90a8b510,transparent 65%)}
 .xm-scenefx-clouds,.xm-scenefx-fog{position:absolute;inset:0}
 .xm-scenefx-clouds b{position:absolute;left:-20%;top:-20%;width:140%;height:58%;background:radial-gradient(ellipse at 25% 30%,var(--haze),transparent 57%);opacity:.18;animation:xm-fx-cloud 80s ease-in-out infinite alternate}
 .xm-scenefx-clouds b+ b{top:-8%;left:0;opacity:.12;animation-delay:-35s;animation-duration:110s}
-.xm-scenefx-fog b{position:absolute;left:-15%;top:20%;width:130%;height:42%;background:radial-gradient(ellipse,var(--haze),transparent 70%);opacity:.36;animation:xm-fx-cloud 65s ease-in-out infinite alternate}
-.xm-scenefx-fog b:nth-child(2){top:45%;opacity:.26;animation-delay:-22s;animation-duration:95s}.xm-scenefx-fog b:nth-child(3){top:68%;opacity:.3;animation-delay:-47s}
+.xm-scenefx-fog b{position:absolute;left:25%;top:24%;width:100%;height:20%;background:radial-gradient(ellipse,var(--haze),transparent 70%);opacity:.6;animation:xm-fx-cloud 18s ease-in-out infinite alternate;filter:blur(9px)}
+.xm-scenefx-fog b:nth-child(2){top:42%;left:40%;height:13%;opacity:.35;animation-delay:-9s;animation-duration:24s}.xm-scenefx-fog b:nth-child(3){top:62%;left:55%;width:70%;height:8%;opacity:.18;animation-delay:-15s}
+.theme-parchment-journal .xm-scenefx-fog b{left:25%;top:18%;height:24%;opacity:.5}
+.theme-stardew-valley .xm-scenefx-fog b{top:33%;height:12%;opacity:.42;filter:blur(5px)}
+.theme-pixel-jrpg .xm-scenefx-fog b{top:24%;height:17%;opacity:.5;filter:blur(4px)}
 .xm-scenefx-particle{position:absolute;display:block;left:var(--x);top:-7%;width:5px;height:5px;animation:xm-fx-fall var(--duration) linear var(--delay) infinite;opacity:0;scale:var(--scale)}
+.xm-scenefx-particle-camera{position:absolute;inset:0;pointer-events:none}
 .xm-scenefx-particle.is-near{z-index:2}
 .xm-scenefx-particle.is-rain{height:23px;width:2px;border-radius:3px;background:linear-gradient(transparent,var(--rain));animation-name:xm-fx-rain}
 .theme-pixel-jrpg .is-rain,.theme-stardew-valley .is-rain{width:3px;height:15px;border-radius:0;background:var(--rain);animation-timing-function:steps(28)}
 .theme-parchment-journal .is-rain{width:1px;height:32px;animation-duration:calc(var(--duration) * 1.4)}
 .theme-animal-crossing .is-rain{width:3px;height:17px;border-radius:60% 60% 80% 80%;background:linear-gradient(transparent,#dbf5ffcc)}
-.xm-scenefx-particle.is-snow{background:var(--snow);border-radius:50%;width:7px;height:7px;box-shadow:0 0 4px #fff4}
+.xm-scenefx-particle.is-snow{background:var(--snow);border-radius:50%;width:5px;height:5px;box-shadow:none;animation-name:xm-fx-snow}
+.xm-scenefx-particle.is-snow:nth-child(3n){width:3px;height:3px;opacity:.5}
+.xm-scenefx-particle.is-snow.is-near{width:12px;height:12px;clip-path:polygon(46% 0,54% 0,57% 34%,84% 15%,90% 24%,65% 44%,100% 46%,100% 54%,65% 57%,89% 78%,82% 86%,57% 65%,54% 100%,46% 100%,43% 65%,16% 87%,10% 79%,35% 57%,0 54%,0 46%,35% 43%,11% 23%,18% 15%,43% 35%)}
 .theme-pixel-jrpg .is-snow,.theme-stardew-valley .is-snow{border-radius:0;width:5px;height:5px;box-shadow:2px 2px #99abc477;animation-timing-function:steps(100)}
 .theme-parchment-journal .is-snow{width:4px;height:4px;box-shadow:none}
 .xm-scenefx-particle.is-petal{width:12px;height:8px;border-radius:90% 10% 80% 25%;background:#ffcfdf;box-shadow:inset 1px 1px #fffa;animation-name:xm-fx-petal}
@@ -53,14 +59,41 @@
 .weather-snow .xm-scenefx-still-weather{background:radial-gradient(circle at 12% 25%,var(--snow) 0 2px,transparent 3px),radial-gradient(circle at 75% 62%,var(--snow) 0 2px,transparent 3px);background-size:137px 163px,193px 227px}
 .xm-scenefx.is-paused *{animation-play-state:paused!important}
 .xm-scenefx.motion-reduced *,.xm-scenefx.motion-off *{animation:none!important}
-@keyframes xm-fx-fall{0%{opacity:0;transform:translate(0,0)}10%{opacity:.65}90%{opacity:.65}100%{opacity:0;transform:translate(var(--drift),110vh)}}
-@keyframes xm-fx-rain{0%{opacity:0;transform:translate(20px,0) rotate(12deg)}10%,85%{opacity:.55}100%{opacity:0;transform:translate(-80px,110vh) rotate(12deg)}}
-@keyframes xm-fx-petal{0%{opacity:0;transform:translate(0,0) rotate(-35deg)}12%{opacity:.75}50%{transform:translate(var(--drift),50vh) rotate(80deg)}88%{opacity:.6}100%{opacity:0;transform:translate(calc(var(--drift) * 2),110vh) rotate(220deg)}}
-@keyframes xm-fx-wind{0%{opacity:0;transform:translate(-25vw,-40px) rotate(-35deg)}20%,70%{opacity:.6}100%{opacity:0;transform:translate(100vw,100px) rotate(250deg)}}
+@keyframes xm-fx-fall{0%{opacity:0;transform:translate(0,0)}10%{opacity:.65}90%{opacity:.65}100%{opacity:0;transform:translate(var(--drift),var(--fall-distance,110vh))}}
+@keyframes xm-fx-rain{0%{opacity:0;transform:translate(0,0) rotate(var(--weather-slant,12deg))}10%,85%{opacity:calc(.3 + var(--weather-wet,.6)*.4)}100%{opacity:0;transform:translate(var(--weather-wind,-80px),var(--fall-distance,110vh)) rotate(var(--weather-slant,12deg))}}
+@keyframes xm-fx-petal{0%{opacity:0;transform:translate(0,0) rotate(-35deg)}12%{opacity:.75}50%{transform:translate(var(--drift),calc(var(--fall-distance,110vh)*.4545)) rotate(80deg)}88%{opacity:.6}100%{opacity:0;transform:translate(calc(var(--drift) * 2),var(--fall-distance,110vh)) rotate(220deg)}}
+@keyframes xm-fx-wind{0%{opacity:0;transform:translate(calc(var(--weather-wind,100px)*-3),-40px) rotate(-35deg)}20%,70%{opacity:.6}100%{opacity:0;transform:translate(calc(var(--weather-wind,100px)*12),100px) rotate(250deg)}}
 @keyframes xm-fx-twinkle{0%,100%{opacity:.08;transform:scale(.65)}45%{opacity:.8;transform:scale(1.2)}}
 @keyframes xm-fx-firefly{0%,100%{opacity:0;transform:translate(0,12px)}25%{opacity:.9}60%{opacity:.35;transform:translate(var(--drift),-45px)}}
 @keyframes xm-fx-meteor{0%,88%,100%{opacity:0;transform:translate(-90px,-80px) rotate(35deg)}89%{opacity:.9}95%{opacity:0;transform:translate(240px,150px) rotate(35deg)}}
 @keyframes xm-fx-watermark{0%,100%{opacity:0;transform:scale(.3)}25%{opacity:.3}70%{opacity:0;transform:scale(1.6)}}
 @keyframes xm-fx-breeze{0%,100%{opacity:0;transform:translate(-100px,0)}30%{opacity:.45}90%{opacity:0;transform:translate(200px,25px)}}
-@keyframes xm-fx-cloud{from{transform:translate(-3%,0)}to{transform:translate(7%,3%)}}
+@keyframes xm-fx-cloud{from{transform:translate(0,0)}to{transform:translate(var(--weather-wind,100px),3%)}}
+.xm-scenefx-clouds b{animation-duration:var(--weather-speed,80s);opacity:calc(var(--weather-cloud,.5)*.28)}
+.xm-island-rain-details{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}
+.xm-scenefx-precipitation{position:absolute;inset:0;opacity:calc(.3 + var(--weather-wet,.6)*.65);animation:xm-weather-strength 32s ease-in-out infinite}
+.xm-island-fog-details{position:absolute;inset:0;width:100%;height:100%;--haze:#d8e6e6}
+.phase-night .xm-island-fog-details,.phase-predawn .xm-island-fog-details{--haze:#9caebe}
+.xm-island-fog-distance{opacity:.78}
+.xm-island-fog-bank{opacity:.5;animation:xm-island-mist-flow 15s ease-in-out infinite alternate}
+.xm-island-fog-bank.is-water{opacity:.32;animation-duration:21s;animation-delay:-8s}
+.xm-snow-roof{animation:xm-snow-settle 40s ease-in-out infinite alternate}
+.xm-snow-bank{animation:xm-snow-settle 55s ease-in-out infinite alternate;animation-delay:-12s}
+.xm-passage-overlay .xm-island-fog-details{--haze:rgb(calc(216 - var(--passage-night,0)*60),calc(230 - var(--passage-night,0)*56),calc(230 - var(--passage-night,0)*40))}
+@keyframes xm-island-mist-flow{from{translate:-36px 2px;opacity:.3}to{translate:48px -3px;opacity:.6}}
+@keyframes xm-weather-strength{0%,100%{opacity:.34}35%{opacity:1}62%{opacity:.6}80%{opacity:.92}}
+@keyframes xm-snow-settle{from{opacity:.55}to{opacity:.9}}
+@keyframes xm-fx-snow{0%{opacity:0;transform:translate(0,0) rotate(0)}10%{opacity:.8}35%{transform:translate(calc(var(--drift)*.6 + var(--weather-wind)*.2),calc(var(--fall-distance,110vh)*.3182)) rotate(65deg)}65%{transform:translate(calc(var(--drift)*-.3 + var(--weather-wind)*.6),calc(var(--fall-distance,110vh)*.5909)) rotate(120deg)}90%{opacity:.7}100%{opacity:0;transform:translate(calc(var(--drift) + var(--weather-wind)),var(--fall-distance,110vh)) rotate(190deg)}}
+.xm-island-rain-ring{fill:none;stroke:#d0e6ed;stroke-width:.8;transform-box:fill-box;transform-origin:center;animation:xm-fx-ripple 4.6s ease-out infinite}
+.xm-island-eave-drop{animation:xm-island-drip 2.2s ease-in infinite}
+@keyframes xm-island-drip{0%,35%{opacity:0;translate:0 0}40%{opacity:.65}95%{opacity:0;translate:0 30px}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.xm-scenefx *{animation:none!important}.xm-scenefx-particle{display:none}}
+
+.xm-theme-fog.theme-parchment-journal{--haze:#e3e0d5}
+.xm-theme-fog.theme-pixel-jrpg{--haze:#bbcae9}
+.xm-theme-fog.theme-stardew-valley{--haze:#cfdedb}
+.phase-night .xm-theme-fog,.phase-predawn .xm-theme-fog{--haze:#9baec2}
+.xm-theme-fog.theme-parchment-journal .xm-island-fog-bank{animation-duration:23s}
+.xm-theme-fog.theme-stardew-valley .xm-island-fog-bank{animation-duration:18s;opacity:.42}
+.xm-scenefx.weather-snow .xm-scenefx-precipitation{opacity:.58;animation:xm-gentle-snow 42s ease-in-out infinite}
+@keyframes xm-gentle-snow{0%,100%{opacity:.45}50%{opacity:.7}}

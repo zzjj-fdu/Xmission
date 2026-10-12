@@ -1,0 +1,36 @@
+.xm-island-landscape{position:absolute;inset:0;overflow:hidden;pointer-events:none;--island-night:0;--island-dusk:0;--island-lamps:0;--island-brightness:1;--island-warmth:0;--island-mist:0}
+.xm-island-landscape>svg{width:100%;height:100%;display:block}
+.xm-island-fixed-plate{filter:brightness(var(--island-brightness)) saturate(calc(1 - var(--island-night)*.18))}
+.xm-island-night-sky{opacity:var(--island-night)}
+.xm-island-dawn-sky{opacity:var(--island-dawn,0)}
+.xm-island-dusk-sky{opacity:var(--island-dusk)}
+.xm-island-sun-disc{fill:rgb(255,calc(251 - var(--island-sun-low)*40),calc(223 - var(--island-sun-low)*104))}
+.xm-island-sunlight{opacity:calc(var(--island-warmth)*var(--island-direct,1));mix-blend-mode:soft-light}
+.xm-island-moonlight{opacity:calc(var(--island-night)*.2);mix-blend-mode:color}
+html[data-xm-scene-visible="false"] .xm-island-landscape *{animation-play-state:paused!important}
+.xm-island-overcast{opacity:calc(var(--island-cloud,.1)*(.42 - var(--island-night)*.27))}
+.xm-island-depth-mist{opacity:var(--island-mist)}
+.xm-island-long-shadow{opacity:calc(var(--island-dusk)*var(--island-direct)*.22);transform-origin:390px 394px;transform:scaleX(calc(.15 + var(--island-dusk)*.85))}
+.xm-island-reflections{opacity:var(--island-lamps)}
+.xm-island-water-light{animation:xm-island-shimmer 6s ease-in-out infinite alternate;transform-origin:center}
+.xm-island-solar-reflection path{animation:xm-island-glitter 2.8s ease-in-out infinite alternate}
+.xm-island-solar-reflection path:nth-child(3n){animation-delay:-1.2s}
+@keyframes xm-island-glitter{from{stroke-opacity:.5}to{stroke-opacity:1}}
+.xm-island-cloud-shadow{opacity:calc(var(--island-cloud,.1)*.13);animation:xm-island-cloud-shadow 24s ease-in-out infinite alternate}
+@keyframes xm-island-shimmer{from{opacity:.55;translate:-1px 0}to{opacity:.9;translate:2px 0}}
+@keyframes xm-island-cloud-shadow{from{translate:-65px 0}to{translate:65px 10px}}
+.xm-passage-overlay{position:fixed;inset:38px 0 0;z-index:1500;background:#203e43;animation:xm-passage-enter .4s ease both;overflow:hidden}
+.xm-passage-overlay .xm-island-landscape{z-index:0}
+.xm-passage-overlay .xm-scenefx{z-index:1}
+.xm-passage-overlay.is-leaving{animation:xm-passage-leave .6s ease both;pointer-events:none}
+@keyframes xm-passage-leave{from{opacity:1}to{opacity:0}}
+.xm-passage-caption{position:absolute;left:clamp(24px,5vw,96px);bottom:36px;color:#fff7df;text-shadow:0 2px 12px #102431;font-size:20px;font-weight:500;letter-spacing:.08em;pointer-events:none}
+.xm-passage-caption small{display:block;font-size:10px;letter-spacing:.25em;margin-bottom:8px;opacity:.8}
+.xm-passage-skip{position:absolute;right:24px;bottom:34px;color:#fff7df;background:#173d4144;border:1px solid #fff4;border-radius:24px;padding:9px 18px;cursor:pointer;backdrop-filter:blur(8px)}
+.xm-window.is-scene-passage .xm-nav{opacity:0;transform:translateX(-32px)}
+.xm-window.is-scene-passage .xm-main{opacity:0;transform:translateX(32px)}
+.xm-window.is-scene-passage .xm-scene-divider{pointer-events:none;opacity:0}
+.xm-nav,.xm-main{transition:opacity .55s ease,transform .55s ease}
+@keyframes xm-passage-enter{from{opacity:0}to{opacity:1}}
+[data-xm-motion="reduced"] .xm-island-landscape *,[data-xm-motion="off"] .xm-island-landscape *{animation:none!important}
+@media(prefers-reduced-motion:reduce){.xm-island-landscape *{animation:none!important}.xm-passage-overlay{animation:none}.xm-nav,.xm-main{transition:none}}

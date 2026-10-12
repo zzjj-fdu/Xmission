@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Xmission 默认能力：任务 CRUD 走自定义命令无需声明，此处放行窗口操作与事件总线",
-  "windows": ["main", "widget", "bubble"],
+  "windows": ["main", "widget", "bubble", "companion", "companion-notice", "companion-panel", "companion-input", "companion-toy"],
   "permissions": [
     "core:default",
     "core:event:default",

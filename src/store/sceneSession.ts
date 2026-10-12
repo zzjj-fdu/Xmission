@@ -8,21 +8,21 @@ interface SceneSession {
   visible: boolean
   reopen: () => void
   hide: () => void
+  refresh: (now?: Date) => void
 }
 
-function initialOpenedAt(): Date {
-  const saved = sessionStorage.getItem('xmission-scene-theme-refresh')
-  sessionStorage.removeItem('xmission-scene-theme-refresh')
-  const date = saved ? new Date(saved) : new Date()
-  return Number.isFinite(date.getTime()) ? date : new Date()
-}
-
-const openedAt = initialOpenedAt()
-export const useSceneSession = create<SceneSession>((set) => ({
+const openedAt = new Date()
+export const useSceneSession = create<SceneSession>((set, get) => ({
   phase: scenePhaseAt(openedAt), openedAt, visible: true,
   reopen: () => {
-    const now = new Date()
-    set({ phase: scenePhaseAt(now), openedAt: now, visible: true })
+    set({ visible: true })
   },
   hide: () => set({ visible: false }),
+  refresh: (now = new Date()) => {
+    const phase = scenePhaseAt(now)
+    const state = get()
+    if (phase !== state.phase || now.toDateString() !== state.openedAt.toDateString()) {
+      set({ phase, openedAt: now })
+    }
+  },
 }))

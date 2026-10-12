@@ -10,6 +10,7 @@ import {
   updateTask,
 } from '../api/tasks';
 import type { CreateTaskInput, Task, TaskFilter, UpdateTaskPatch } from '../api/tasks';
+let fetchVersion = 0;
 
 interface TasksState {
   tasks: Task[];
@@ -27,12 +28,13 @@ export const useTasksStore = create<TasksState>((set, get) => ({
   loading: false,
 
   fetchAll: async (filter?: TaskFilter) => {
+    const version = ++fetchVersion;
     set({ loading: true });
     try {
       const tasks = await listTasks(filter ?? {});
-      set({ tasks });
+      if (version === fetchVersion) set({ tasks });
     } finally {
-      set({ loading: false });
+      if (version === fetchVersion) set({ loading: false });
     }
   },
 
@@ -48,7 +50,9 @@ export const useTasksStore = create<TasksState>((set, get) => ({
 
   create: async (input: CreateTaskInput) => {
     const task = await createTask(input);
-    await get().fetchAll();
+    // Creation has already committed; a refresh failure must not invite a duplicate retry.
+    set(state => ({ tasks: [...state.tasks.filter(t => t.id !== task.id), task] }));
+    await get().fetchAll().catch(error => console.error('[tasks] 创建后刷新失败', error));
     return task;
   },
 

@@ -9,6 +9,12 @@ const TABLES: &[&str] = &[
     "tasks", "task_steps", "pomodoro_sessions", "xp_ledger", "coin_ledger",
     "rewards", "reward_redemptions", "streaks", "settings", "courses",
     "course_slots", "holidays", "ai_suggestions", "lottery_draws",
+    "companion_trips", "companion_collection", "companion_reminders", "companion_care_events", "companion_feedback", "companion_notice_queue", "companion_memories", "companion_goal_categories",
+    "preparation_rules", "preparation_runs", "preparation_events", "companion_chapters", "companion_chapter_keepsakes",
+    "agent_requests",
+    "companion_journey_requests",
+    "goal_preferences", "planning_schedule", "deleted_items", "planning_previews",
+    "companion_play_sessions", "companion_ai_calls", "companion_help_drafts",
 ];
 
 fn export_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
@@ -17,7 +23,7 @@ fn export_dir(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     Ok(dir)
 }
 
-fn row_json(row: &sqlx::sqlite::SqliteRow) -> Result<Value, String> {
+pub(crate) fn row_json(row: &sqlx::sqlite::SqliteRow) -> Result<Value, String> {
     let mut object = Map::new();
     for col in row.columns() {
         let name = col.name();
@@ -34,6 +40,71 @@ fn row_json(row: &sqlx::sqlite::SqliteRow) -> Result<Value, String> {
         object.insert(name.to_string(), value);
     }
     Ok(Value::Object(object))
+}
+
+/// Restore is all-or-nothing. Table/column identifiers come from our schema;
+/// backup values are bound parameters and can never become executable SQL.
+pub(crate) async fn restore_document(pool:&SqlitePool,document:&Value)->Result<(),String> {
+    if document["format"]!="xmission-backup-v1" {return Err("不是支持的 Xmission 备份".into());}
+    let tables=document["tables"].as_object().ok_or("备份缺少数据表")?;
+    if !tables.contains_key("tasks")||!tables.contains_key("settings") {return Err("备份缺少任务或设置，未恢复".into());}
+    if tables.keys().any(|key|!TABLES.contains(&key.as_str())) {return Err("备份包含当前版本不支持的数据表，请使用相应版本恢复".into());}
+    let size=serde_json::to_vec(document).map_err(|e|e.to_string())?.len();
+    if size>32*1024*1024 {return Err("备份超过 32 MB".into());}
+    let mut tx=crate::gamification::begin_write(pool).await?;
+    sqlx::query("PRAGMA defer_foreign_keys=ON").execute(&mut *tx).await.map_err(|e|e.to_string())?;
+    for table in TABLES.iter().rev() {sqlx::query(&format!("DELETE FROM {table}")).execute(&mut *tx).await.map_err(|e|e.to_string())?;}
+    let mut count=0usize;
+    for table in TABLES {
+        let Some(values)=tables.get(*table) else{continue;};
+        let rows=values.as_array().ok_or("备份表必须是数组")?;count+=rows.len();if count>200_000 {return Err("备份记录过多".into());}
+        let columns:Vec<String>=sqlx::query_scalar(&format!("SELECT name FROM pragma_table_info('{table}')")).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
+        for row in rows {
+            let object=row.as_object().ok_or("备份记录格式错误")?;
+            if object.is_empty()||object.keys().any(|k|!columns.contains(k)) {return Err(format!("{table} 的字段与当前版本不兼容"));}
+            let names=object.keys().map(|k|format!("\"{k}\"")).collect::<Vec<_>>().join(",");
+            let placeholders=vec!["?";object.len()].join(",");
+            let sql=format!("INSERT INTO {table}({names})VALUES({placeholders})");let mut query=sqlx::query(&sql);
+            for value in object.values() {
+                query=match value {
+                    Value::Null=>query.bind(None::<String>),Value::String(s)=>query.bind(s),
+                    Value::Number(n) if n.is_i64()=>query.bind(n.as_i64().unwrap()),
+                    Value::Number(n) if n.is_f64()=>query.bind(n.as_f64().unwrap()),
+                    _=>return Err("备份字段必须是文本、数字或空值".into()),
+                };
+            }
+            query.execute(&mut *tx).await.map_err(|e|format!("备份记录校验失败，原数据保留：{e}"))?;
+        }
+    }
+    if !tables.contains_key("companion_journey_requests") {
+        sqlx::query("INSERT INTO companion_journey_requests(request_id) SELECT request_id FROM agent_requests WHERE tool='journey_action'").execute(&mut *tx).await.map_err(|e|e.to_string())?;
+    }
+    // Restored history is readable; running work and machine/file grants are
+    // explicitly not resurrected from a backup on another machine.
+    sqlx::query("UPDATE preparation_rules SET enabled=0,needs_authorization=1").execute(&mut *tx).await.map_err(|e|e.to_string())?;
+    sqlx::query("UPDATE preparation_runs SET state=CASE WHEN state='ready' THEN 'stale' ELSE 'cancelled' END,error='从备份恢复，执行已停止；文件范围需重新授权',lease_until=NULL WHERE state IN('queued','running','ready','failed')").execute(&mut *tx).await.map_err(|e|e.to_string())?;
+    sqlx::query("UPDATE pomodoro_sessions SET state='paused' WHERE state='running'").execute(&mut *tx).await.map_err(|e|e.to_string())?;
+    for (key,value) in [("agent_enabled","false"),("preparation_paused","true")] {
+        sqlx::query("INSERT INTO settings(key,value)VALUES(?,?)ON CONFLICT(key)DO UPDATE SET value=excluded.value").bind(key).bind(value).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+    }
+    for key in ["llm_api_key","agent_access_token"] {sqlx::query("DELETE FROM settings WHERE key=?").bind(key).execute(&mut *tx).await.map_err(|e|e.to_string())?;}
+    tx.commit().await.map_err(|e|format!("备份关联检查失败，原数据保留：{e}"))
+}
+
+#[cfg(not(test))]
+#[tauri::command]
+pub async fn restore_json_backup(app:AppHandle,pool:State<'_,SqlitePool>,document:Value)->Result<String,String> {
+    use tauri::Emitter;
+    // Preserve a complete current snapshot before any restore writes.
+    let safety=write_backup(&export_dir(&app)?,&backup_document(pool.inner()).await?)?;
+    let port=crate::agent_api::saved_port(pool.inner()).await?;
+    restore_document(pool.inner(),&document).await?;
+    crate::agent_api::set_agent_connection(app.clone(),app.state::<crate::agent_api::AgentService>(),app.state::<SqlitePool>(),false,port).await?;
+    for event in ["tasks-changed","steps-changed","preparations-changed","journey-changed","companion-changed","settings-changed"] {let _=app.emit(event,());}
+    let _=app.emit("wallet-updated",crate::gamification::build_wallet(pool.inner()).await?);
+    let _=app.emit("pomodoro-changed",crate::pomodoro::pomodoro_current(app.state::<SqlitePool>()).await?);
+    let _=app.emit("backup-restored",());
+    Ok(format!("已恢复备份，准备与接管已暂停。恢复前的备份：{}",safety.display()))
 }
 
 #[tauri::command]
@@ -77,6 +148,7 @@ pub(crate) fn write_backup(dir: &std::path::Path, document: &Value) -> Result<st
 fn clean_markdown(text: &str) -> String {
     text.replace(['\r', '\n'], " ").trim().to_string()
 }
+#[cfg(test)] mod tests;
 
 #[tauri::command]
 pub async fn export_daily_report(app: AppHandle, pool: State<'_, SqlitePool>) -> Result<String, String> {

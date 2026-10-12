@@ -1,0 +1,10 @@
+import {useEffect,useRef,useState} from 'react'
+import {invoke} from '@tauri-apps/api/core'
+interface Config{enabled:boolean;dailyCalls:number;hourlyCalls:number;dailyTokens:number}
+interface Budget{config:Config;calls:number;tokens:number;unknownUsage:number;priceKnown:boolean}
+export function CompanionAiPreferences(){
+ const [budget,setBudget]=useState<Budget|null>(null),[form,setForm]=useState<Config|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),alive=useRef(true)
+ useEffect(()=>{alive.current=true;void invoke<Budget>('get_companion_ai_budget').then(b=>{if(alive.current){setBudget(b);setForm(b.config)}}).catch(e=>{if(alive.current)setError(String(e))});return()=>{alive.current=false}},[])
+ const save=async()=>{if(!form||busy)return;setBusy(true);setError('');try{await invoke('set_companion_ai_budget',{config:form});setBudget(await invoke('get_companion_ai_budget'))}catch(e){setError(String(e))}finally{setBusy(false)}}
+ return <details className="xm-pet-ai-budget"><summary>伙伴 AI 用量与预算</summary>{form&&<><p>本地照顾和动作不调用 AI。今天 {budget?.calls??0} 次，计入 {budget?.tokens??0} token{budget?.unknownUsage?'，其中 '+budget.unknownUsage+' 次未返回用量，按预占上限保守计数':''}。</p><small>服务价格未核实，金额未知。这里限制伙伴调用次数与 token，不能承诺服务账单金额。</small><label><input type="checkbox" checked={form.enabled} disabled={busy} onChange={e=>setForm({...form,enabled:e.target.checked})}/>允许手动向伙伴递 AI 纸条</label><div className="xm-pet-preferences-grid"><label>每天最多调用<input type="number" min={1} max={200} value={form.dailyCalls} onChange={e=>setForm({...form,dailyCalls:Number(e.target.value)})}/></label><label>每小时最多调用<input type="number" min={1} max={60} value={form.hourlyCalls} onChange={e=>setForm({...form,hourlyCalls:Number(e.target.value)})}/></label></div><label>每天 token 上限<input type="number" min={2000} max={1000000} step={1000} value={form.dailyTokens} onChange={e=>setForm({...form,dailyTokens:Number(e.target.value)})}/></label><button disabled={busy} onClick={()=>void save()}>{busy?'保存中…':'保存预算'}</button></>}{error&&<p role="alert">{error}</p>}</details>
+}

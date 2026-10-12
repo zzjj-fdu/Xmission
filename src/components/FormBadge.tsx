@@ -28,21 +28,21 @@ export function formLabel(form: string): string {
   return labels[currentThemeKey()]?.[form] ?? form;
 }
 
-export function FormBadge({ form, compact = false }: { form: string; compact?: boolean }) {
+export function FormBadge({ form, compact = false, small = false }: { form: string; compact?: boolean; small?: boolean }) {
   const theme = currentThemeKey();
   const t = activeTheme;
   const caption = compact ? compactLabels[theme]?.[form] ?? form : formLabel(form);
   const badge = art[theme];
   if (badge) {
-    const width = compact ? (theme === 'stardew-valley' ? 112 : 104) : (theme === 'stardew-valley' ? 136 : 126);
-    const height = compact ? 26 : 30;
+    const width = Math.round((compact ? (theme === 'stardew-valley' ? 112 : 104) : (theme === 'stardew-valley' ? 136 : 126)) * (small ? .86 : 1));
+    const height = small ? (compact ? 23 : 26) : compact ? 26 : 30;
     const scaleX = width / badge.width;
     const scaleY = height / badge.height;
     return <span style={{
       display: 'inline-flex', position: 'relative', alignItems: 'center', justifyContent: 'center',
       flexShrink: 0, width, height, overflow: 'hidden', verticalAlign: 'middle',
       color: theme === 'animal-crossing' ? '#4A3F35' : '#FFF1CA',
-      fontFamily: t.font.display, fontSize: compact ? 12 : 13,
+      fontFamily: t.font.display, fontSize: small ? (compact ? 11 : 12) : compact ? 12 : 13,
       fontWeight: theme === 'animal-crossing' ? 700 : 600,
       letterSpacing: theme === 'parchment-journal' ? '.05em' : 0,
       textShadow: theme === 'animal-crossing' ? '0 1px 0 #fff' : '0 1px 1px rgba(23,18,10,.7)',
@@ -56,7 +56,7 @@ export function FormBadge({ form, compact = false }: { form: string; compact?: b
       }} />
       <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: 3,
         paddingLeft: theme === 'parchment-journal' ? 13 : theme === 'animal-crossing' ? 10 : 0 }}>
-        <PixelIcon name={formIcon(form)} size={compact ? 18 : 19} />
+        <PixelIcon name={formIcon(form)} size={small ? 16 : compact ? 18 : 19} />
         {caption}
       </span>
     </span>;
@@ -64,9 +64,9 @@ export function FormBadge({ form, compact = false }: { form: string; compact?: b
   const color = form === 'main_quest' ? t.colors.accent : form === 'side_quest' ? t.colors.info : t.colors.accentAlt;
   return <span style={{
     display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0,
-    padding: compact ? '2px 5px' : '3px 7px', minHeight: compact ? 22 : 30,
+    padding: compact || small ? '2px 5px' : '3px 7px', minHeight: small ? (compact ? 20 : 26) : compact ? 22 : 30,
     whiteSpace: 'nowrap', color, background: t.colors.panelLight,
     border: `2px solid ${color}`, boxShadow: `inset 0 0 0 1px ${t.colors.goldDark}, 2px 2px 0 ${t.colors.goldDark}`,
-    fontFamily: t.font.display, fontSize: compact ? 11 : 13, lineHeight: 1.1,
-  }}><PixelIcon name={formIcon(form)} size={compact ? 16 : 20} />{caption}</span>;
+    fontFamily: t.font.display, fontSize: small ? (compact ? 10 : 12) : compact ? 11 : 13, lineHeight: 1.1,
+  }}><PixelIcon name={formIcon(form)} size={small ? 14 : compact ? 16 : 20} />{caption}</span>;
 }

@@ -20,6 +20,20 @@ pub fn validate_title(title: &str) -> Result<(), String> {
     }
 }
 
+/// Accept the same date/date-time formats used by the task UI.
+pub(crate) fn validate_schedule(deadline: Option<&str>, estimated_min: Option<i64>) -> Result<(), String> {
+    if estimated_min.is_some_and(|m| m < 0 || m > 525600) { return Err("预计分钟数必须在 0–525600 之间".into()); }
+    if let Some(d) = deadline {
+        if NaiveDate::parse_from_str(d, "%Y-%m-%d").is_err()
+            && chrono::DateTime::parse_from_rfc3339(d).is_err()
+            && chrono::NaiveDateTime::parse_from_str(d, "%Y-%m-%dT%H:%M").is_err()
+            && chrono::NaiveDateTime::parse_from_str(d, "%Y-%m-%dT%H:%M:%S").is_err() {
+            return Err("截止时间请使用 YYYY-MM-DD 或 ISO 8601 日期时间".into());
+        }
+    }
+    Ok(())
+}
+
 /// 重要度 / 紧迫度必须在 1~5 之间。
 pub fn validate_importance_urgency(importance: i64, urgency: i64) -> Result<(), String> {
     if !(1..=5).contains(&importance) {
@@ -76,7 +90,7 @@ fn emit_tasks_changed(app: &AppHandle) {
     let _ = app.emit("tasks-changed", ());
 }
 
-async fn fetch_task<'a>(executor: impl Executor<'a, Database = Sqlite>, id: &str) -> Result<Task, String> {
+pub(crate) async fn fetch_task<'a>(executor: impl Executor<'a, Database = Sqlite>, id: &str) -> Result<Task, String> {
     let mut task = sqlx::query_as::<_, Task>("SELECT * FROM tasks WHERE id = ?")
         .bind(id)
         .fetch_optional(executor)
@@ -95,7 +109,16 @@ pub async fn create_task(
     state: State<'_, SqlitePool>,
     input: CreateTaskInput,
 ) -> Result<Task, String> {
+    let mut tx = crate::gamification::begin_write(state.inner()).await?;
+    let task = create_task_tx(&mut tx, input).await?;
+    tx.commit().await.map_err(|e| e.to_string())?;
+    emit_tasks_changed(&app);
+    Ok(task)
+}
+
+pub(crate) async fn create_task_tx(tx: &mut sqlx::Transaction<'_, Sqlite>, input: CreateTaskInput) -> Result<Task, String> {
     validate_title(&input.title)?;
+    validate_schedule(input.deadline.as_deref(), input.estimated_min)?;
     validate_form(&input.form)?;
     let importance = input.importance.unwrap_or(3);
     let urgency = input.urgency.unwrap_or(3);
@@ -115,13 +138,12 @@ pub async fn create_task(
 
     let id = Uuid::new_v4().to_string();
     let created_at = now_utc_iso();
-    let pool = state.inner();
 
     // 支线只能挂主线：parent_id 存在时校验父任务存在且 form = 'main_quest'
     if let Some(pid) = &input.parent_id {
         let parent_form: Option<String> = sqlx::query_scalar("SELECT form FROM tasks WHERE id = ?")
             .bind(pid)
-            .fetch_optional(pool)
+            .fetch_optional(&mut **tx)
             .await
             .map_err(|e| e.to_string())?;
         validate_parent_form(pid, parent_form.as_deref())?;
@@ -144,12 +166,11 @@ pub async fn create_task(
     .bind(&recurrence)
     .bind(&recur_days)
     .bind(&icon)
-    .execute(pool)
+    .execute(&mut **tx)
     .await
     .map_err(|e| e.to_string())?;
 
-    let task = fetch_task(pool, &id).await?;
-    emit_tasks_changed(&app);
+    let task = fetch_task(&mut **tx, &id).await?;
     Ok(task)
 }
 
@@ -167,13 +188,23 @@ pub async fn update_task(
 
 pub(crate) async fn update_task_db(pool: &SqlitePool, id: &str, patch: UpdateTaskPatch) -> Result<Task, String> {
     let mut tx = crate::gamification::begin_write(pool).await?;
+    let result = update_task_tx(&mut tx, id, patch).await?;
+    tx.commit().await.map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+pub(crate) async fn update_task_tx(tx: &mut sqlx::Transaction<'_, Sqlite>, id: &str, patch: UpdateTaskPatch) -> Result<Task, String> {
+    validate_schedule(patch.deadline.as_ref().and_then(|v| v.as_deref()), patch.estimated_min.flatten())?;
+    if let Some(Some(date)) = &patch.planned_date {
+        NaiveDate::parse_from_str(date, "%Y-%m-%d").map_err(|_| "计划日期请使用 YYYY-MM-DD".to_string())?;
+    }
     if let Some(title) = &patch.title {
         validate_title(title)?;
     }
     let importance = patch.importance;
     let urgency = patch.urgency;
     if importance.is_some() || urgency.is_some() {
-        let existing = fetch_task(&mut *tx, id).await?;
+        let existing = fetch_task(&mut **tx, id).await?;
         validate_importance_urgency(
             importance.unwrap_or(existing.importance),
             urgency.unwrap_or(existing.urgency),
@@ -181,7 +212,7 @@ pub(crate) async fn update_task_db(pool: &SqlitePool, id: &str, patch: UpdateTas
     }
     if let Some(status) = &patch.status {
         validate_status(status)?;
-        let existing = fetch_task(&mut *tx, id).await?;
+        let existing = fetch_task(&mut **tx, id).await?;
         if status != &existing.status && (status == "done" || existing.status == "done") {
             return Err("请使用完成或撤销完成操作修改任务状态".into());
         }
@@ -191,6 +222,14 @@ pub(crate) async fn update_task_db(pool: &SqlitePool, id: &str, patch: UpdateTas
     }
     if let Some(Some(recur_days)) = &patch.recur_days {
         recurring::validate_recur_days(recur_days)?;
+    }
+    if patch.recurrence.is_some() || patch.recur_days.is_some() {
+        let existing = fetch_task(&mut **tx, id).await?;
+        let recurrence = patch.recurrence.as_deref().unwrap_or(&existing.recurrence);
+        let days = patch.recur_days.as_ref().unwrap_or(&existing.recur_days);
+        if recurrence == "weekly" {
+            recurring::validate_recur_days(days.as_deref().unwrap_or(""))?;
+        }
     }
     if let Some(icon) = &patch.icon {
         recurring::validate_icon(icon)?;
@@ -228,7 +267,7 @@ pub(crate) async fn update_task_db(pool: &SqlitePool, id: &str, patch: UpdateTas
     .bind(patch.planned_date.is_some())
     .bind(patch.planned_date.as_ref().and_then(|v| v.as_deref()))
     .bind(&id)
-    .execute(&mut *tx)
+    .execute(&mut **tx)
     .await
     .map_err(|e| e.to_string())?;
 
@@ -236,8 +275,7 @@ pub(crate) async fn update_task_db(pool: &SqlitePool, id: &str, patch: UpdateTas
         return Err(format!("任务不存在：{id}"));
     }
 
-    let task = fetch_task(&mut *tx, id).await?;
-    tx.commit().await.map_err(|e| e.to_string())?;
+    let task = fetch_task(&mut **tx, id).await?;
     Ok(task)
 }
 
@@ -251,9 +289,15 @@ pub async fn complete_task(app: AppHandle, state: State<'_, SqlitePool>, id: Str
 
 pub(crate) async fn complete_task_db(pool: &SqlitePool, id: &str) -> Result<(Task, crate::models::Wallet), String> {
     let mut tx = crate::gamification::begin_write(pool).await?;
+    let result = complete_task_tx(&mut tx, id).await?;
+    tx.commit().await.map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+pub(crate) async fn complete_task_tx(tx: &mut sqlx::Transaction<'_, Sqlite>, id: &str) -> Result<(Task, crate::models::Wallet), String> {
 
     // 循环任务：永不进入永久 done，打卡写 last_done_date + streak，任务保持 active
-    let existing = fetch_task(&mut *tx, id).await?;
+    let existing = fetch_task(&mut **tx, id).await?;
     if existing.recurrence != "none" {
         let now = Local::now();
         let today = crate::gamification::task_day(now);
@@ -275,14 +319,15 @@ pub(crate) async fn complete_task_db(pool: &SqlitePool, id: &str) -> Result<(Tas
                 .bind(&today_s)
                 .bind(new_streak)
                 .bind(&id)
-                .execute(&mut *tx)
+                .execute(&mut **tx)
                 .await
                 .map_err(|e| e.to_string())?;
             // 基础 XP + 连续加成；ref_id 带日期后缀，reopen 只撤回今天的打卡
+            crate::companion_feedback::task(tx,&existing).await?;
             let base_xp = crate::gamification::task_xp(existing.importance, existing.estimated_min);
             let total = base_xp + recurring::streak_bonus(new_streak);
             crate::gamification::settle_earn(
-                &mut tx,
+                tx,
                 total,
                 crate::gamification::coins_from_xp(total),
                 "task",
@@ -290,9 +335,8 @@ pub(crate) async fn complete_task_db(pool: &SqlitePool, id: &str) -> Result<(Tas
             )
             .await?;
         }
-        let task = fetch_task(&mut *tx, id).await?;
-        let wallet = crate::gamification::build_wallet(&mut *tx).await?;
-        tx.commit().await.map_err(|e| e.to_string())?;
+        let task = fetch_task(&mut **tx, id).await?;
+        let wallet = crate::gamification::build_wallet(&mut **tx).await?;
         return Ok((task, wallet));
     }
 
@@ -300,18 +344,18 @@ pub(crate) async fn complete_task_db(pool: &SqlitePool, id: &str) -> Result<(Tas
     let result = sqlx::query("UPDATE tasks SET status = 'done', completed_at = ? WHERE id = ? AND status != 'done'")
         .bind(&completed_at)
         .bind(&id)
-        .execute(&mut *tx)
+        .execute(&mut **tx)
         .await
         .map_err(|e| e.to_string())?;
 
-    let task = fetch_task(&mut *tx, id).await?;
+    let task = fetch_task(&mut **tx, id).await?;
     // M2 契约 §2.3：完成任务结算 XP/金币/streak（emit wallet-updated）
     if result.rows_affected() > 0 {
+        crate::companion_feedback::task(tx,&task).await?;
         let xp = crate::gamification::task_xp(task.importance, task.estimated_min);
-        crate::gamification::settle_earn(&mut tx, xp, crate::gamification::coins_from_xp(xp), "task", Some(id)).await?;
+        crate::gamification::settle_earn(tx, xp, crate::gamification::coins_from_xp(xp), "task", Some(id)).await?;
     }
-    let wallet = crate::gamification::build_wallet(&mut *tx).await?;
-    tx.commit().await.map_err(|e| e.to_string())?;
+    let wallet = crate::gamification::build_wallet(&mut **tx).await?;
     Ok((task, wallet))
 }
 
@@ -325,15 +369,21 @@ pub async fn reopen_task(app: AppHandle, state: State<'_, SqlitePool>, id: Strin
 
 pub(crate) async fn reopen_task_db(pool: &SqlitePool, id: &str) -> Result<(Task, crate::models::Wallet), String> {
     let mut tx = crate::gamification::begin_write(pool).await?;
+    let result = reopen_task_tx(&mut tx, id).await?;
+    tx.commit().await.map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+pub(crate) async fn reopen_task_tx(tx: &mut sqlx::Transaction<'_, Sqlite>, id: &str) -> Result<(Task, crate::models::Wallet), String> {
 
     // 循环任务：reopen = 撤销今天的打卡（扣回本次 XP 含加成、streak-1、last_done_date 回退）
-    let existing = fetch_task(&mut *tx, id).await?;
+    let existing = fetch_task(&mut **tx, id).await?;
+    crate::companion_feedback::cancel(tx,id).await?;
     if existing.recurrence != "none" {
         let today = crate::gamification::task_day(Local::now());
         let today_s = today.format("%Y-%m-%d").to_string();
         if existing.last_done_date.as_deref() != Some(today_s.as_str()) {
-            let wallet = crate::gamification::build_wallet(&mut *tx).await?;
-            tx.commit().await.map_err(|e| e.to_string())?;
+            let wallet = crate::gamification::build_wallet(&mut **tx).await?;
             return Ok((existing, wallet));
         }
         let new_streak = (existing.streak - 1).max(0);
@@ -348,20 +398,19 @@ pub(crate) async fn reopen_task_db(pool: &SqlitePool, id: &str) -> Result<(Task,
             .bind(&rollback)
             .bind(new_streak)
             .bind(&id)
-            .execute(&mut *tx)
+            .execute(&mut **tx)
             .await
             .map_err(|e| e.to_string())?;
         // 撤回今天这次打卡的 XP/金币（含连续加成；按日期作用域 ref_id，幂等）
-        crate::gamification::revoke(&mut tx, &format!("{id}:{today_s}"), "task").await?;
-        let task = fetch_task(&mut *tx, id).await?;
-        let wallet = crate::gamification::build_wallet(&mut *tx).await?;
-        tx.commit().await.map_err(|e| e.to_string())?;
+        crate::gamification::revoke(tx, &format!("{id}:{today_s}"), "task").await?;
+        let task = fetch_task(&mut **tx, id).await?;
+        let wallet = crate::gamification::build_wallet(&mut **tx).await?;
         return Ok((task, wallet));
     }
 
     let result = sqlx::query("UPDATE tasks SET status = 'open', completed_at = NULL WHERE id = ?")
         .bind(&id)
-        .execute(&mut *tx)
+        .execute(&mut **tx)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -369,32 +418,41 @@ pub(crate) async fn reopen_task_db(pool: &SqlitePool, id: &str) -> Result<(Task,
         return Err(format!("任务不存在：{id}"));
     }
 
-    let task = fetch_task(&mut *tx, id).await?;
+    let task = fetch_task(&mut **tx, id).await?;
     // 取消完成：回收该任务已结算的 XP/金币（幂等，不动 streak）
-    if existing.status == "done" { crate::gamification::revoke(&mut tx, &task.id, "task").await?; }
-    let wallet = crate::gamification::build_wallet(&mut *tx).await?;
-    tx.commit().await.map_err(|e| e.to_string())?;
+    if existing.status == "done" { crate::gamification::revoke(tx, &task.id, "task").await?; }
+    let wallet = crate::gamification::build_wallet(&mut **tx).await?;
     Ok((task, wallet))
 }
 
 #[tauri::command]
 pub async fn delete_task(app: AppHandle, state: State<'_, SqlitePool>, id: String) -> Result<(), String> {
-    let result = sqlx::query("DELETE FROM tasks WHERE id = ?")
-        .bind(&id)
-        .execute(state.inner())
-        .await
-        .map_err(|e| e.to_string())?;
-
-    if result.rows_affected() == 0 {
-        return Err(format!("任务不存在：{id}"));
-    }
-
+    let mut tx = crate::gamification::begin_write(state.inner()).await?;
+    delete_task_tx(&mut tx, &id).await?;
+    tx.commit().await.map_err(|e| e.to_string())?;
     emit_tasks_changed(&app);
+    Ok(())
+}
+
+pub(crate) async fn delete_task_tx(tx: &mut sqlx::Transaction<'_, Sqlite>, id: &str) -> Result<(), String> {
+    fetch_task(&mut **tx, id).await?;
+    crate::trash::record_task(tx,id).await?;
+    // Preserve child tasks when deleting their parent, and remove the entire step tree.
+    sqlx::query("UPDATE tasks SET parent_id = NULL WHERE parent_id = ?")
+        .bind(id).execute(&mut **tx).await.map_err(|e| e.to_string())?;
+    sqlx::query("DELETE FROM task_steps WHERE task_id = ?")
+        .bind(id).execute(&mut **tx).await.map_err(|e| e.to_string())?;
+    sqlx::query("DELETE FROM tasks WHERE id = ?")
+        .bind(id).execute(&mut **tx).await.map_err(|e| e.to_string())?;
     Ok(())
 }
 
 #[tauri::command]
 pub async fn list_tasks(state: State<'_, SqlitePool>, filter: TaskFilter) -> Result<Vec<Task>, String> {
+    list_tasks_db(state.inner(), filter).await
+}
+
+pub(crate) async fn list_tasks_db(pool: &SqlitePool, filter: TaskFilter) -> Result<Vec<Task>, String> {
     if let Some(status) = &filter.status {
         validate_status(status)?;
     }
@@ -413,7 +471,7 @@ pub async fn list_tasks(state: State<'_, SqlitePool>, filter: TaskFilter) -> Res
 
     let mut tasks = qb
         .build_query_as::<Task>()
-        .fetch_all(state.inner())
+        .fetch_all(pool)
         .await
         .map_err(|e| e.to_string())?;
     let today = crate::gamification::task_day(Local::now());

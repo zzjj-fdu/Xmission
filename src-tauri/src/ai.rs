@@ -730,3 +730,8 @@ mod tests {
         assert_eq!(int_1_5(None), 3);
     }
 }
+
+/// Companion conversations share the configured transport; schedule context is opt-in.
+pub(crate) async fn companion_json(pool:&SqlitePool,message:&str,context:&str)->Result<Value,String>{
+ crate::companion_ai::respond(pool,message,context,"letter").await
+}

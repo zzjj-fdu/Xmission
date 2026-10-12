@@ -19,7 +19,11 @@ pub fn show_main_window(app: &AppHandle) -> bool {
 /// Reserve a loopback endpoint before Tauri creates any windows. The next
 /// process can request the existing main window and then exit immediately.
 pub fn claim_single_instance() -> Result<Option<TcpListener>, String> {
-    let address = INSTANCE_ADDRESS.parse().map_err(|e| format!("单实例地址无效：{e}"))?;
+    // An explicitly isolated data directory can be tested alongside the real application.
+    // Normal installations still use the original single-instance address.
+    let isolated=std::env::var_os("XMISSION_DATA_DIR").is_some();
+    let custom=if isolated{std::env::var("XMISSION_INSTANCE_PORT").ok().and_then(|v|v.parse::<u16>().ok()).filter(|p|*p>=1024).map(|p|format!("127.0.0.1:{p}"))}else{None};
+    let address = custom.as_deref().unwrap_or(INSTANCE_ADDRESS).parse().map_err(|e| format!("单实例地址无效：{e}"))?;
     match TcpListener::bind(address) {
         Ok(listener) => Ok(Some(listener)),
         Err(bind_error) => {
@@ -174,7 +178,8 @@ pub fn show_widget_context_menu(app: AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     let hide = MenuItem::with_id(&app, "hide-widget", "完全关闭任务球", true, None::<&str>)
         .map_err(|e| e.to_string())?;
-    let menu = Menu::with_items(&app, &[&show, &hide]).map_err(|e| e.to_string())?;
+    let pet = MenuItem::with_id(&app,"pet-summon","召回桌面小狐狸",true,None::<&str>).map_err(|e|e.to_string())?;
+    let menu = Menu::with_items(&app, &[&show, &pet, &hide]).map_err(|e| e.to_string())?;
     win.popup_menu(&menu).map_err(|e| e.to_string())
 }
 
@@ -265,4 +270,50 @@ pub async fn drag_bubble(app: AppHandle) -> Result<BubbleDragResult, String> {
 #[tauri::command]
 pub async fn drag_bubble(_app: AppHandle) -> Result<BubbleDragResult, String> {
     Err("当前系统暂不支持任务球拖动".into())
+}
+
+
+/// A collapsed task list has exactly one desktop entry: the pet (including its
+/// travel bag), or the compact task ball when the pet is not visible.
+#[derive(Default)]
+pub struct TaskEntryRuntime {
+    collapsed: std::sync::atomic::AtomicBool,
+}
+
+pub fn sync_task_entry(app: &AppHandle) -> Result<(), String> {
+    if crate::onboarding::scene_active(app) { return Ok(()); }
+    let owner=app.clone();
+    // Read live visibility on the UI thread; never hold a mutex while dispatching
+    // a native window request (the pet close callback can arrive in that request).
+    app.run_on_main_thread(move||{
+        use std::sync::atomic::Ordering;
+        let state=owner.state::<TaskEntryRuntime>();
+        let Some(ball)=owner.get_webview_window("bubble")else{return};
+        let pet_visible=owner.get_webview_window("companion").is_some_and(|w|w.is_visible().unwrap_or(false));
+        let tasks_visible=owner.get_webview_window("widget").is_some_and(|w|w.is_visible().unwrap_or(false));
+        if !pet_visible&&!tasks_visible&&state.collapsed.load(Ordering::SeqCst){let _=ball.show();}else{let _=ball.hide();}
+    }).map_err(|e|e.to_string())
+}
+
+#[tauri::command]
+pub fn collapse_task_widget(app: AppHandle) -> Result<(), String> {
+    let win = app.get_webview_window("widget").ok_or("找不到任务悬浮窗")?;
+    win.hide().map_err(|e| e.to_string())?;
+    app.state::<TaskEntryRuntime>().collapsed.store(true, std::sync::atomic::Ordering::SeqCst);
+    sync_task_entry(&app)
+}
+
+#[tauri::command]
+pub fn expand_task_widget(app: AppHandle) -> Result<(), String> {
+    let win = app.get_webview_window("widget").ok_or("找不到任务悬浮窗")?;
+    win.show().map_err(|e| e.to_string())?;
+    app.state::<TaskEntryRuntime>().collapsed.store(false, std::sync::atomic::Ordering::SeqCst);
+    sync_task_entry(&app)?;
+    win.set_focus().map_err(|e| e.to_string())
+}
+
+pub fn hide_task_windows(app: &AppHandle) {
+    app.state::<TaskEntryRuntime>().collapsed.store(false, std::sync::atomic::Ordering::SeqCst);
+    if let Some(win) = app.get_webview_window("widget") { let _ = win.hide(); }
+    if let Some(win) = app.get_webview_window("bubble") { let _ = win.hide(); }
 }

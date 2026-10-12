@@ -5,8 +5,8 @@ export type SceneWeather = 'clear' | 'cloudy' | 'rain' | 'snow' | 'wind' | 'fog'
 export type SceneMotion = 'full' | 'reduced' | 'off'
 export type WeatherMode = 'manual' | 'live'
 export interface WeatherCity { id: number; name: string; region: string; country: string; latitude: number; longitude: number; timezone: string }
-interface WeatherObservation { weather: SceneWeather; temperature: number; observedAt: string; fetchedAt: number }
-interface WeatherPreferences { mode: WeatherMode; manual: SceneWeather; city: WeatherCity | null; motion: SceneMotion }
+export interface WeatherObservation { weather: SceneWeather; temperature: number; observedAt: string; fetchedAt: number; cloudCover?: number; precipitation?: number; windSpeed?: number; windDirection?: number; windGust?: number; solar?: Array<{ date: string; sunrise: string; sunset: string }> }
+interface WeatherPreferences { mode: WeatherMode; manual: SceneWeather; city: WeatherCity | null; motion: SceneMotion; seed: number }
 interface WeatherState extends WeatherPreferences {
   observation: WeatherObservation | null
   status: 'idle' | 'loading' | 'ready' | 'error'
@@ -22,7 +22,7 @@ interface WeatherState extends WeatherPreferences {
 const STORAGE_KEY = 'xmission-scene-weather-v1'
 const CACHE_KEY = 'xmission-scene-weather-cache-v1'
 const CACHE_MS = 30 * 60_000
-const defaults: WeatherPreferences = { mode: 'manual', manual: 'clear', city: null, motion: 'full' }
+const defaults: WeatherPreferences = { mode: 'manual', manual: 'clear', city: null, motion: 'full', seed: 137 }
 
 function readPreferences(): WeatherPreferences {
   try {
@@ -32,6 +32,7 @@ function readPreferences(): WeatherPreferences {
       manual: isWeather(stored.manual) ? stored.manual : 'clear',
       city: stored.city && Number.isFinite(stored.city.latitude) && Number.isFinite(stored.city.longitude) ? stored.city : null,
       motion: stored.motion === 'reduced' || stored.motion === 'off' ? stored.motion : 'full',
+      seed: Number.isFinite(stored.seed) ? stored.seed! : 137,
     }
   } catch { return defaults }
 }
@@ -86,24 +87,24 @@ export const useSceneWeatherStore = create<WeatherState>((set, get) => ({
   status: 'idle',
   error: '',
   setMode(mode) {
-    const next = { mode, manual: get().manual, city: get().city, motion: get().motion }
+    const next = { mode, manual: get().manual, city: get().city, motion: get().motion, seed: get().seed }
     persist(next)
     set({ mode, error: '' })
     if (mode === 'live') void get().refresh()
   },
   setManual(manual) {
-    const next = { mode: get().mode, manual, city: get().city, motion: get().motion }
+    const next = { mode: get().mode, manual, city: get().city, motion: get().motion, seed: manual === get().manual ? get().seed : Math.round(Math.random()*100000) }
     persist(next)
-    set({ manual })
+    set({ manual, seed: next.seed })
   },
   setCity(city) {
-    const next = { mode: 'live' as const, manual: get().manual, city, motion: get().motion }
+    const next = { mode: 'live' as const, manual: get().manual, city, motion: get().motion, seed: get().seed }
     persist(next)
     set({ mode: 'live', city, observation: readCache(city.id), status: 'idle', error: '' })
     void get().refresh(true)
   },
   setMotion(motion) {
-    persist({ mode: get().mode, manual: get().manual, city: get().city, motion })
+    persist({ mode: get().mode, manual: get().manual, city: get().city, motion, seed: get().seed })
     set({ motion })
   },
   async refresh(force = false) {
@@ -126,11 +127,13 @@ export const useSceneWeatherStore = create<WeatherState>((set, get) => ({
         const url = new URL('https://api.open-meteo.com/v1/forecast')
         url.searchParams.set('latitude', String(city.latitude))
         url.searchParams.set('longitude', String(city.longitude))
-        url.searchParams.set('current', 'temperature_2m,weather_code,wind_speed_10m')
+        url.searchParams.set('current', 'temperature_2m,weather_code,cloud_cover,precipitation,wind_speed_10m,wind_direction_10m,wind_gusts_10m')
+        url.searchParams.set('daily', 'sunrise,sunset')
+        url.searchParams.set('forecast_days', '2')
         url.searchParams.set('timezone', city.timezone)
         const response = await fetch(url, { signal: AbortSignal.timeout(10000) })
         if (!response.ok) throw new Error(`天气读取失败（${response.status}）`)
-        const data = await response.json() as { current?: { time: string; temperature_2m: number; weather_code: number; wind_speed_10m: number } }
+        const data = await response.json() as { current?: { time: string; temperature_2m: number; weather_code: number; wind_speed_10m: number; cloud_cover: number; precipitation: number; wind_direction_10m: number; wind_gusts_10m: number }; daily?: { time: string[]; sunrise: string[]; sunset: string[] } }
         if (!data.current || !Number.isFinite(data.current.weather_code) || !Number.isFinite(data.current.temperature_2m))
           throw new Error('天气服务未返回有效的当前天气')
         const observation = {
@@ -138,6 +141,12 @@ export const useSceneWeatherStore = create<WeatherState>((set, get) => ({
           temperature: data.current.temperature_2m,
           observedAt: data.current.time,
           fetchedAt: Date.now(),
+          cloudCover: data.current.cloud_cover, precipitation: data.current.precipitation,
+          windSpeed: data.current.wind_speed_10m, windDirection: data.current.wind_direction_10m, windGust: data.current.wind_gusts_10m,
+          solar: (data.daily?.time ?? []).flatMap((date, i) => {
+            const sunrise = data.daily?.sunrise[i], sunset = data.daily?.sunset[i]
+            return sunrise && sunset && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(sunrise) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(sunset) ? [{ date, sunrise, sunset }] : []
+          }),
         }
         localStorage.setItem(CACHE_KEY, JSON.stringify({ cityId: city.id, observation }))
         if (get().city?.id === city.id) set({ observation, status: 'ready', error: '' })

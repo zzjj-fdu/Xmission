@@ -2,7 +2,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useTasksStore } from '../store/tasks'
 import type { CreateTaskInput, Task } from '../api/tasks'
-import { isRecurring, recurringDueToday } from '../api/tasks'
+import { isRecurring, isTaskDoneToday, recurringDueToday } from '../api/tasks'
 import { getRankedToday } from '../api/scheduler'
 import type { RankedTask } from '../api/scheduler'
 import { getSetting } from '../api/settings'
@@ -26,6 +26,7 @@ import { StepsPanel } from '../components/StepsPanel'
 import { activeTheme as pixelJrpg, themeMarker } from '../themes'
 import { SectionHeader } from '../components/SectionHeader'
 import { FormBadge, formLabel } from '../components/FormBadge'
+import { TodayFocusTag } from '../components/TodayFocusTag'
 
 const { colors, font } = pixelJrpg
 
@@ -345,7 +346,7 @@ const labelStyle: CSSProperties = {
 }
 
 /** 重要度徽记：像素星（与 QuestLog 一致） */
-function ImportanceStars({ importance }: { importance: number }) {
+function ImportanceStars({ importance, small = false }: { importance: number; small?: boolean }) {
   const count = Math.max(1, Math.min(3, Math.ceil(importance / 2)))
   return (
     <span
@@ -353,7 +354,7 @@ function ImportanceStars({ importance }: { importance: number }) {
       title={`重要度 ${importance}`}
     >
       {Array.from({ length: count }, (_, i) => (
-        <PixelIcon key={i} name="star" size={16} />
+        <PixelIcon key={i} name="star" size={small ? 14 : 16} />
       ))}
     </span>
   )
@@ -374,12 +375,16 @@ function TaskRow({
   stepCount,
   indent,
   llmReady,
+  selected,
+  selectionVersion,
 }: {
   task: Task
   ranked?: RankedTask
   stepCount?: StepCount
   indent?: boolean
   llmReady: boolean
+  selected?: boolean
+  selectionVersion?: number
 }) {
   const complete = useTasksStore((s) => s.complete)
   const reopen = useTasksStore((s) => s.reopen)
@@ -387,13 +392,16 @@ function TaskRow({
   const update = useTasksStore((s) => s.update)
   const recurring = isRecurring(task)
   // 循环任务的"完成"= 今日已打卡（永不进入永久 done）
-  const done = task.status === 'done' || (recurring && task.doneToday)
+  const done = isTaskDoneToday(task)
   const deadline = formatDeadline(task.deadline)
   const [hover, setHover] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [stepsOpen, setStepsOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'steps' | 'task'>('task')
+  useEffect(() => {
+    if (selected) { setDetailsOpen(true); setActiveTab('task'); document.getElementById('task-' + task.id)?.scrollIntoView({ block: 'nearest' }) }
+  }, [selected, task.id, selectionVersion])
   const [editRecurrence, setEditRecurrence] = useState(task.recurrence)
   const [editDays, setEditDays] = useState<number[]>([])
   const [editIcon, setEditIcon] = useState(task.icon)
@@ -479,6 +487,7 @@ function TaskRow({
 
   return (
     <div
+      id={'task-' + task.id}
       style={{
         position: 'relative', // 逾期红条竖条的锚点
         borderBottom: `1px solid ${colors.goldDark}`,
@@ -545,15 +554,15 @@ function TaskRow({
           {themeMarker()}
         </span>
         {/* 语义分类图标（M4）：无分类用默认卷轴；形态改由彩色文字徽章标识 */}
-        <PixelIcon name={taskIcon(task.icon)} size={42} />
-        <span className="xm-task-row-form"><FormBadge form={task.form} /></span>
-        <span className="xm-task-row-stars" title={`重要度 ${task.importance}`}><ImportanceStars importance={task.importance} /></span>
+        <PixelIcon name={taskIcon(task.icon)} size={indent ? 36 : 42} />
+        <span className="xm-task-row-form"><FormBadge form={task.form} small={indent} /></span>
+        <span className="xm-task-row-stars" title={`重要度 ${task.importance}`}><ImportanceStars importance={task.importance} small={indent} /></span>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span
             style={{
               minWidth: 0, /* 允许收缩，长标题省略号而不是撑出横向滚动条 */
               textDecoration: done ? 'line-through' : 'none',
-              fontSize: 14,
+              fontSize: indent ? 13 : 14,
               fontFamily: font.body,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -567,7 +576,7 @@ function TaskRow({
           {subtitle && (
             <span
               style={{
-                fontSize: 12,
+                fontSize: indent ? 11 : 12,
                 fontFamily: font.body,
                 color: colors.info,
                 overflow: 'hidden',
@@ -640,6 +649,7 @@ function TaskRow({
           <JrpgButton variant="ghost" onClick={() => setDetailsOpen(false)}>收起</JrpgButton>
         </div>
         {activeTab === 'task' && <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 10 }}>
+          <TodayFocusTag taskId={task.id} />
           <JrpgButton
             onClick={() => {
               const action = done ? reopen(task.id) : complete(task.id)
@@ -852,7 +862,7 @@ function TaskRow({
 }
 
 
-export default function TasksPage() {
+export default function TasksPage({ selectedTaskId, selectionVersion }: { selectedTaskId?: string; selectionVersion?: number } = {}) {
   const tasks = useTasksStore((s) => s.tasks)
   const loading = useTasksStore((s) => s.loading)
   const fetchAll = useTasksStore((s) => s.fetchAll)
@@ -1051,7 +1061,7 @@ export default function TasksPage() {
   // 循环任务只在应做日进入今日列表（与后端 get_ranked_today 过滤口径一致）
   const doing = useMemo<{ task: Task; ranked?: RankedTask }[]>(() => {
     const visible = (t: Task) =>
-      t.status !== 'done' && (!isRecurring(t) || recurringDueToday(t))
+      !isTaskDoneToday(t) && (!isRecurring(t) || recurringDueToday(t) || t.id === selectedTaskId)
     if (!ranked) {
       return tasks.filter(visible).map((t) => ({ task: t }))
     }
@@ -1059,8 +1069,8 @@ export default function TasksPage() {
     const seen = new Set<string>()
     const out: { task: Task; ranked?: RankedTask }[] = []
     for (const r of ranked) {
-      const t = byId.get(r.task.id) ?? r.task
-      if (!visible(t)) continue
+      const t = byId.get(r.task.id)
+      if (!t || !visible(t)) continue
       seen.add(t.id)
       out.push({ task: t, ranked: r })
     }
@@ -1068,7 +1078,7 @@ export default function TasksPage() {
       if (visible(t) && !seen.has(t.id)) out.push({ task: t })
     }
     return out
-  }, [tasks, ranked])
+  }, [tasks, ranked, selectedTaskId])
 
   // 分组：主线组（主线 + 紧下方的其子支线）→ 游离任务（遭遇/无父或父不在列表的支线）
   // doing 已按规则排序，各桶按取出顺序保持规则排序
@@ -1097,7 +1107,7 @@ export default function TasksPage() {
     return { roots, childrenByParent, loose }
   }, [doing])
 
-  const doneList = tasks.filter((t) => t.status === 'done')
+  const doneList = tasks.filter(isTaskDoneToday)
 
   return (
     <div style={{ width: '100%' }}>
@@ -1330,12 +1340,14 @@ export default function TasksPage() {
                 {/* 主线组：主线行 + 紧下方缩进的子支线 */}
                 {grouped.roots.map(({ task: t, ranked: r }) => (
                   <div key={t.id}>
-                    <TaskRow task={t} ranked={r} stepCount={stepCounts[t.id]} llmReady={llmReady} />
+                    <TaskRow task={t} ranked={r} stepCount={stepCounts[t.id]} llmReady={llmReady} selected={t.id === selectedTaskId} selectionVersion={t.id === selectedTaskId ? selectionVersion : undefined} />
                     {(grouped.childrenByParent.get(t.id) ?? []).map(
                       ({ task: c, ranked: cr }) => (
                         <TaskRow
                           key={c.id}
                           task={c}
+                          selected={c.id === selectedTaskId}
+                          selectionVersion={c.id === selectedTaskId ? selectionVersion : undefined}
                           ranked={cr}
                           stepCount={stepCounts[c.id]}
                           llmReady={llmReady}
@@ -1347,7 +1359,7 @@ export default function TasksPage() {
                 ))}
                 {/* 游离任务：遭遇 / 无父或母主线不在进行中列表的支线 */}
                 {grouped.loose.map(({ task: t, ranked: r }) => (
-                  <TaskRow key={t.id} task={t} ranked={r} stepCount={stepCounts[t.id]} llmReady={llmReady} />
+                  <TaskRow key={t.id} task={t} ranked={r} stepCount={stepCounts[t.id]} llmReady={llmReady} selected={t.id === selectedTaskId} selectionVersion={t.id === selectedTaskId ? selectionVersion : undefined} />
                 ))}
               </>
             )}
@@ -1355,7 +1367,7 @@ export default function TasksPage() {
               <>
                 <div style={{ height: 16 }} />
                 <SectionHeader muted>已完成（{doneList.length}）</SectionHeader>
-                {doneList.map((t) => <TaskRow key={t.id} task={t} llmReady={llmReady} />)}
+                {doneList.map((t) => <TaskRow key={t.id} task={t} llmReady={llmReady} selected={t.id === selectedTaskId} selectionVersion={t.id === selectedTaskId ? selectionVersion : undefined} />)}
               </>
             )}
           </>

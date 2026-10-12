@@ -8,18 +8,25 @@ import type { PixelIconName } from '../components/PixelIcon'
 import { WalletCard } from '../components/WalletCard'
 import { useProfileStore } from '../store/profile'
 import { emitShowWidget } from '../api/window'
-import { SceneAtmosphere } from '../components/SceneAtmosphere'
+import { SceneVisual } from '../components/SceneVisual'
 import { usePomodoroStore } from '../store/pomodoro'
 import { FocusTimer } from '../components/FocusTimer'
 import { getSetting, setSetting } from '../api/settings'
 import { currentSceneWeather, useSceneWeatherStore } from '../store/sceneWeather'
 import { useSceneSession } from '../store/sceneSession'
 import { sceneUrl } from '../scenes'
+import { useSceneClock } from '../hooks/useSceneClock'
+import { useScenePassageController } from '../hooks/useScenePassage'
+import { useSceneEnvironment } from '../hooks/useSceneEnvironment'
+import { useScenePassage } from '../store/scenePassage'
+import type { ScenePassage } from '../store/scenePassage'
 import TasksPage from './TasksPage'
 import SchedulePage from './SchedulePage'
 import CalendarPage from './CalendarPage'
 import ShopPage from './ShopPage'
 import SettingsPage from './SettingsPage'
+import {SceneCompanionSticker} from '../companions/SceneCompanionSticker'
+import { FirstExperience } from '../onboarding/FirstExperience'
 
 type PageKey = 'tasks' | 'schedule' | 'calendar' | 'shop' | 'settings'
 
@@ -38,8 +45,24 @@ const SCENE_COPY = {
   'stardew-valley': ['播下今天的第一粒种子。', '把日子种成喜欢的样子。', '收获从认真过好今天开始。'],
 } as const
 
+const PASSAGE_COPY = {
+  'pixel-jrpg': { name:'YOUR NEXT ADVENTURE', sunrise:'山巅亮起，新的旅程就要开始。', sunset:'让最后一束光，照亮归途。', lamps:'城堡的灯火，为旅人守夜。' },
+  'parchment-journal': { name:'FIELD NOTES', sunrise:'薄雾散开，翻到新的一页。', sunset:'把山谷的余晖，写进今天。', lamps:'远方灯火亮了，故事还在继续。' },
+  'animal-crossing': { name:'ISLAND DAYS', sunrise:'岛上的一天，慢慢醒来。', sunset:'把最后一束阳光，留给今天。', lamps:'一盏一盏，是回家的光。' },
+  'stardew-valley': { name:'THE FARM TODAY', sunrise:'田野醒了，今天的种子等着你。', sunset:'晚风收起阳光，也收起一天的辛劳。', lamps:'木屋灯亮了，萤火虫陪你回家。' },
+} as const
+
 export default function MainApp() {
+  useSceneClock()
   const [page, setPage] = useState<PageKey>('tasks')
+  const [selectedTaskId, setSelectedTaskId] = useState<string>()
+  const [selectionVersion, setSelectionVersion] = useState(0)
+  const selectTask = (id: string) => { setPage('tasks'); setSelectedTaskId(id); setSelectionVersion(v => v + 1) }
+  useEffect(() => {
+    const task = (e: Event) => selectTask((e as CustomEvent<string>).detail)
+    window.addEventListener('preparation:task', task)
+    return () => window.removeEventListener('preparation:task', task)
+  }, [])
   const [sceneWidth, setSceneWidth] = useState(() => {
     const raw = localStorage.getItem('xmission-scene-width')
     const saved = raw == null ? 300 : Number(raw)
@@ -47,6 +70,10 @@ export default function MainApp() {
   })
   const [draggingScene, setDraggingScene] = useState(false)
   const [focusMode, setFocusMode] = useState(false)
+  useScenePassageController(draggingScene || focusMode)
+  const passage = useScenePassage(s => s.active)
+  const [lastPassage, setLastPassage] = useState<ScenePassage | null>(null)
+  const visiblePassage = passage ?? lastPassage
   const [focusMinutes, setFocusMinutes] = useState('25')
   const [focusError, setFocusError] = useState('')
   const sceneBeforeFocus = useRef(300)
@@ -59,6 +86,7 @@ export default function MainApp() {
   const { colors, font } = pixelJrpg
   const themeKey = currentThemeKey()
   const displayedWeather = useSceneWeatherStore(currentSceneWeather)
+  const environment = useSceneEnvironment(displayedWeather)
   const sceneMotion = useSceneWeatherStore((state) => state.motion)
   const sceneSession = useSceneSession()
   const background = sceneUrl(themeKey, sceneSession.phase)
@@ -69,7 +97,37 @@ export default function MainApp() {
 
   useEffect(() => {
     void useSceneWeatherStore.getState().hydrate()
+    document.documentElement.setAttribute('data-xm-main','')
+    return () => { document.documentElement.removeAttribute('data-xm-main'); useScenePassage.setState({ pending:null,active:null }) }
   }, [])
+
+  useEffect(() => {
+    document.documentElement.dataset.xmMotion = sceneMotion
+  }, [sceneMotion])
+  useEffect(() => {
+    const update = () => { document.documentElement.dataset.xmSceneVisible = String(sceneSession.visible && !document.hidden) }
+    update(); document.addEventListener('visibilitychange',update)
+    return () => document.removeEventListener('visibilitychange',update)
+  }, [sceneSession.visible])
+
+  useEffect(() => {
+    if (!passage) {
+      const timer = window.setTimeout(() => setLastPassage(null),600)
+      return () => window.clearTimeout(timer)
+    }
+    setLastPassage(passage)
+    const before = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const shell = document.querySelector<HTMLElement>('.xm-shell')
+    if (shell) shell.inert = true
+    document.querySelector<HTMLButtonElement>('.xm-passage-skip')?.focus({preventScroll:true})
+    const escape = (event: KeyboardEvent) => { if (event.key==='Escape') { event.preventDefault(); useScenePassage.getState().finish() } }
+    document.addEventListener('keydown',escape)
+    return () => {
+      if (shell) shell.inert = false
+      if (before?.isConnected) before.focus({preventScroll:true})
+      document.removeEventListener('keydown',escape)
+    }
+  }, [passage])
 
   useEffect(() => {
     if (!sceneSession.visible) return
@@ -93,6 +151,15 @@ export default function MainApp() {
       const minutes = Number(value)
       if (Number.isInteger(minutes) && minutes >= 1 && minutes <= 180) setFocusMinutes(String(minutes))
     }).catch(() => { /* browser preview uses the default */ })
+  }, [])
+
+  useEffect(() => {
+    let disposed=false,stop:(()=>void)|undefined
+    const navigate=(value:unknown)=>{if(NAV_ITEMS.some(item=>item.key===value))setPage(value as PageKey)}
+    const local=(event:Event)=>navigate((event as CustomEvent).detail)
+    window.addEventListener('companion:navigate',local)
+    void listen<{page:string;taskId?:string}>('main:navigate',event=>{navigate(event.payload?.page);if(event.payload.taskId)selectTask(event.payload.taskId)}).then(fn=>{if(disposed)fn();else stop=fn}).catch(()=>{})
+    return()=>{disposed=true;stop?.();window.removeEventListener('companion:navigate',local)}
   }, [])
 
   const enterFocus = () => {
@@ -190,7 +257,7 @@ export default function MainApp() {
   }
 
   return (
-    <div className="xm-window" style={{ color: colors.text, fontFamily: font.body, background: colors.bg }}>
+    <div className={`xm-window${passage ? ' is-scene-passage' : ''}`} style={{ color: colors.text, fontFamily: font.body, background: colors.bg }}>
       <header className="xm-window-titlebar" data-tauri-drag-region="" style={{ fontFamily: font.display }} onDoubleClick={() => windowOp('toggleMaximize')}>
         <span data-tauri-drag-region="" className="xm-window-title"><img src={xmissionIcon} width={20} height={20} alt="" /> XMISSION <span className="xm-window-title-sub">{NAV_ITEMS.find((item) => item.key === page)?.label}</span></span>
         <div className="xm-window-controls">
@@ -319,7 +386,8 @@ export default function MainApp() {
         </button>
       </nav>
       <div className="xm-scene" style={{ width: sceneWidth, backgroundImage: `linear-gradient(180deg, transparent 60%, rgba(0,0,0,.38)), url("${background}")` }}>
-        {sceneWidth > 0 && !focusMode && <SceneAtmosphere theme={themeKey} phase={sceneSession.phase} weather={displayedWeather} motion={sceneMotion} active={sceneSession.visible} />}
+        {sceneWidth > 0 && !focusMode && !passage && <SceneVisual theme={themeKey} phase={sceneSession.phase} weather={displayedWeather} motion={sceneMotion} active={sceneSession.visible} environment={environment} />}
+        <SceneCompanionSticker theme={themeKey} phase={sceneSession.phase} enabled={sceneWidth>0&&!focusMode&&!passage}/>
         <div className="xm-scene-caption" aria-hidden="true">
           <span>{themeKey === 'animal-crossing' ? 'ISLAND DAYS' : themeKey === 'stardew-valley' ? 'THE FARM TODAY' : themeKey === 'parchment-journal' ? 'FIELD NOTES' : 'YOUR NEXT ADVENTURE'}</span>
           <strong>{dailyCopy}</strong>
@@ -335,7 +403,7 @@ export default function MainApp() {
         }}
         onDoubleClick={() => setSceneWidth(300)} />
       <main className="xm-main" style={{
-        flex: '1 1 0', padding: 24, overflowY: 'auto',
+        flex: '1 1 0', padding: 24, overflowY: 'auto', containerType: 'inline-size', containerName: 'xm-main-content',
         ...(themeKey === 'stardew-valley' ? { background: pixelJrpg.appBg } : {}),
       }}>
         <div className="xm-page-kicker">
@@ -343,7 +411,7 @@ export default function MainApp() {
           <span>{new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }).format(new Date())}</span>
         </div>
         {page === 'tasks' ? (
-          <TasksPage />
+          <TasksPage selectedTaskId={selectedTaskId} selectionVersion={selectionVersion} />
         ) : page === 'schedule' ? (
           <SchedulePage />
         ) : page === 'calendar' ? (
@@ -359,7 +427,7 @@ export default function MainApp() {
       </div>}
       </div>
       {focusMode && <div className="xm-focus-mode" style={{ backgroundImage: `linear-gradient(180deg,#0004,#0001 45%,#0006),url("${background}")` }}>
-        <SceneAtmosphere theme={themeKey} phase={sceneSession.phase} weather={displayedWeather} motion={sceneMotion} active={sceneSession.visible} />
+        <SceneVisual theme={themeKey} phase={sceneSession.phase} weather={displayedWeather} motion={sceneMotion} active={sceneSession.visible} environment={environment} />
         <button type="button" className="xm-focus-exit" onClick={() => { void exitFocus() }}>退出专注　×</button>
         <div className={`xm-focus-content ${pomodoro ? 'is-running' : 'is-setup'}`}
           style={pomodoro ? { background: 'none', backdropFilter: 'none', WebkitBackdropFilter: 'none', border: 0, boxShadow: 'none' } : undefined}>
@@ -374,6 +442,12 @@ export default function MainApp() {
           </div>
           {focusError && <p role="alert" className="xm-focus-error">{focusError}</p>}
         </div>
+      </div>}
+      <FirstExperience navigate={(target, id) => { if (NAV_ITEMS.some(item => item.key === target)) setPage(target as PageKey); if (id) selectTask(id) }} />
+      {visiblePassage && <div className={`xm-passage-overlay${passage ? '' : ' is-leaving'}`} role="dialog" aria-modal="true" aria-label="风景时间过场">
+        <SceneVisual theme={themeKey} phase={visiblePassage.from} atmospherePhase={visiblePassage.to} weather={displayedWeather} motion={sceneMotion} active={sceneSession.visible} environment={environment} passage={visiblePassage} cinematic />
+        <div className="xm-passage-caption"><small>{PASSAGE_COPY[themeKey].name} · {displayedWeather === 'rain' ? 'AFTER THE RAIN' : 'A LITTLE CHANGE OF LIGHT'}</small>{PASSAGE_COPY[themeKey][visiblePassage.kind]}</div>
+        <button className="xm-passage-skip" disabled={!passage} onClick={() => useScenePassage.getState().finish()}>跳过过场</button>
       </div>}
     </div>
   )

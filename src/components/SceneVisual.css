@@ -1,0 +1,13 @@
+.xm-scene-visual{position:absolute;inset:0;overflow:hidden;pointer-events:none;isolation:isolate}
+.xm-scene-visual-layer{position:absolute;inset:0;background-size:cover;background-position:center;overflow:hidden}
+.xm-scene-visual-layer.is-previous{z-index:0}
+.xm-scene-visual-layer.is-arriving{z-index:1;animation:xm-scene-crossfade 1.2s cubic-bezier(.25,.1,.25,1) both}
+@keyframes xm-scene-crossfade{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.xm-scene-visual-layer.is-arriving{animation:none}}
+
+/* The storm canvas reveals this layer in its opaque frame using the shared timeline. */
+.xm-scene-visual-layer.is-snow-arriving{z-index:1;opacity:0}
+.xm-scene-blizzard{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+
+@media(prefers-reduced-motion:reduce){.xm-scene-visual-layer.is-snow-arriving{animation:none}.xm-scene-blizzard{display:none}}
+
