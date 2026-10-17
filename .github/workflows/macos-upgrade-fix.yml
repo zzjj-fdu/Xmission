@@ -1,0 +1,87 @@
+name: macOS upgrade compatibility repair
+
+on:
+  push:
+    branches: ['codex/macos-upgrade-fix-20261017']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-upgrade-fix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '13.5'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - name: Use official Cargo registry
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          config = Path('src-tauri/.cargo/config.toml')
+          config.write_text(config.read_text().split('[source.crates-io]')[0])
+          PY
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          cache-on-failure: true
+      - run: npm ci
+      - run: npm run check && npm run check:claw-setup
+      - name: Validate managed Mac runtime and process cancellation
+        run: |
+          managed_node=$(sh src-tauri/resources/claw-bootstrap.sh "$RUNNER_TEMP/claw-runtime")
+          test "$("$managed_node" --version)" = v24.16.0
+          "$managed_node" "$(dirname "$managed_node")/../lib/node_modules/npm/bin/npm-cli.js" --version
+          test "$(sh src-tauri/resources/claw-bootstrap.sh "$RUNNER_TEMP/claw-runtime")" = "$managed_node"
+          python3 - <<'PY'
+          import os, signal, subprocess
+          owner = subprocess.Popen(['/bin/sh', '-c', 'sleep 30 & wait'], start_new_session=True)
+          subprocess.run(['/bin/kill', '-KILL', '--', f'-{owner.pid}'], check=True)
+          owner.wait(timeout=5)
+          assert owner.returncode != 0
+          PY
+      - name: Build universal macOS application
+        run: npm run tauri -- build --target universal-apple-darwin --bundles app --config src-tauri/tauri.macos.conf.json -- --locked
+      - name: Verify and create DMG
+        run: |
+          APP=src-tauri/target/universal-apple-darwin/release/bundle/macos/Xmission.app
+          lipo "$APP/Contents/MacOS/xmission" -verify_arch arm64 x86_64
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          mkdir -p "$RUNNER_TEMP/xmission-dmg" release-output
+          ditto "$APP" "$RUNNER_TEMP/xmission-dmg/Xmission.app"
+          ln -s /Applications "$RUNNER_TEMP/xmission-dmg/Applications"
+          hdiutil create -volname Xmission -srcfolder "$RUNNER_TEMP/xmission-dmg" -fs HFS+ -format UDZO release-output/Xmission-0.67.1-macOS-upgrade-fix-universal.dmg
+          hdiutil verify release-output/*.dmg
+          cd release-output
+          shasum -a 256 *.dmg > SHA256SUMS.txt
+      - name: Verify packaged app upgrades and reopens historical data
+        run: |
+          python3 scripts/check-macos-upgrade.py --app src-tauri/target/universal-apple-darwin/release/bundle/macos/Xmission.app/Contents/MacOS/xmission --output "$RUNNER_TEMP/macos-upgrade-proof"
+          cp "$RUNNER_TEMP/macos-upgrade-proof/result.json" release-output/upgrade-tests.json
+      - name: Preserve diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-upgrade-diagnostics
+          path: |
+            ${{ runner.temp }}/macos-upgrade-proof/*.log
+            ${{ runner.temp }}/macos-upgrade-proof/result.json
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Xmission-0.67.1-macOS-upgrade-fix-universal
+          path: release-output/*
+          if-no-files-found: error

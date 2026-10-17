@@ -1,0 +1,2 @@
+# Migration checksums must not depend on the build computer's line endings.
+src-tauri/migrations/*.sql text eol=lf

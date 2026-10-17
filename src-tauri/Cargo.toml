@@ -1,6 +1,6 @@
 [package]
 name = "xmission"
-version = "0.67.0"
+version = "0.67.1"
 description = "Xmission - gamified desktop taskbar"
 license = "PolyForm-Noncommercial-1.0.0"
 edition = "2021"
